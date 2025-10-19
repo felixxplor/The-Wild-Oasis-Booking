@@ -1,14 +1,14 @@
-import NavToggle from "./NavToggle";
-import { auth } from "@/app/_lib/auth";
+import NavToggle from './NavToggle'
+import { auth } from '@/app/_lib/auth'
 
 async function Header() {
-  const session = await auth();
+  const session = await auth()
 
   return (
-    <header className="border-b border-primary-900 p-2 md:px-8 md:py-5">
+    <header className="">
       <NavToggle session={session} />
     </header>
-  );
+  )
 }
 
-export default Header;
+export default Header

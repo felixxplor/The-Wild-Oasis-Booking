@@ -1,27 +1,29 @@
-"use client";
+'use client'
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState } from 'react'
+import { SessionProvider } from 'next-auth/react'
 
-const ReservationContext = createContext();
+const ReservationContext = createContext()
 
-const initialState = { from: undefined, to: undefined };
+const initialState = { date: undefined }
 
 function ReservationProvider({ children }) {
-  const [range, setRange] = useState(initialState);
-  const resetRange = () => setRange(initialState);
+  const [reservation, setReservation] = useState(initialState)
+  const resetReservation = () => setReservation(initialState)
 
   return (
-    <ReservationContext.Provider value={{ range, setRange, resetRange }}>
-      {children}
-    </ReservationContext.Provider>
-  );
+    <SessionProvider>
+      <ReservationContext.Provider value={{ reservation, setReservation, resetReservation }}>
+        {children}
+      </ReservationContext.Provider>
+    </SessionProvider>
+  )
 }
 
 function useReservation() {
-  const context = useContext(ReservationContext);
-  if (context === undefined)
-    throw new Error("Context was used outside provider");
-  return context;
+  const context = useContext(ReservationContext)
+  if (context === undefined) throw new Error('Context was used outside provider')
+  return context
 }
 
-export { ReservationProvider, useReservation };
+export { ReservationProvider, useReservation }

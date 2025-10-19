@@ -1,18 +1,18 @@
-"use client";
+'use client'
 
-import { useFormStatus } from "react-dom";
+import { useFormStatus } from 'react-dom'
 
-export default function SubmitButton({ children, pendingLebel }) {
+export default function SubmitButton({ children, pendingLabel, className = '' }) {
   // you can put this new useFormStatus hook only in the client component.
   // This hook is still in development, so it's still a beta feature.
-  const { pending } = useFormStatus();
+  const { pending } = useFormStatus()
 
   return (
     <button
       disabled={pending}
-      className="bg-accent-500 px-4 py-2 md:px-8 md:py-4 text-primary-800 font-semibold hover:bg-accent-600 transition-all disabled:cursor-not-allowed disabled:bg-gray-500 disabled:text-gray-300"
+      className={`text-[#414141] bg-transparent border border-[#414141] text-xs tracking-[.22em] h-[45px] min-w-[180px] px-[35px] transition duration-300 hover:bg-[#414141] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#414141] ${className}`}
     >
-      {pending ? pendingLebel : children}
+      {pending ? pendingLabel : children}
     </button>
-  );
+  )
 }

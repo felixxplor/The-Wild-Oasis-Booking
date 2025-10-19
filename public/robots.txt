@@ -2,8 +2,8 @@ User-agent: *
 Disallow: /account/
 Disallow: /api/
 Allow: /login/
-Allow: /about/
-Allow: /cabins/
+Allow: /contact/
+Allow: /services/
 Allow: /
 
-Sitemap: https://the-wild-oasis-booking-alamin.vercel.app/sitemap.xml
+Sitemap: https://nailaholics.com.au/sitemap.xml

@@ -1,15 +1,27 @@
-// import { NextResponse } from "next/server";
+import { auth } from '@/app/_lib/auth'
+import { NextResponse } from 'next/server'
 
-// export function middleware(request) {
-//   console.log(request);
+export default auth((req) => {
+  const { nextUrl } = req
+  const isLoggedIn = !!req.auth
 
-//   return NextResponse.redirect(new URL("/about", request.url));
-// }
+  const isAuthPage = nextUrl.pathname === '/login' || nextUrl.pathname === '/register'
+  const isProtectedRoute =
+    nextUrl.pathname.startsWith('/account') || nextUrl.pathname.startsWith('/appointments')
 
-import { auth } from "@/app/_lib/auth";
+  // Redirect logged-in users away from login/register pages
+  if (isLoggedIn && isAuthPage) {
+    return NextResponse.redirect(new URL('/appointments', nextUrl))
+  }
 
-export const middleware = auth;
+  // Redirect non-logged-in users away from protected routes
+  if (!isLoggedIn && isProtectedRoute) {
+    return NextResponse.redirect(new URL('/login', nextUrl))
+  }
+
+  return NextResponse.next()
+})
 
 export const config = {
-  matcher: ["/account"],
-};
+  matcher: ['/login', '/register', '/account/:path*', '/appointments/:path*', '/booking-summary'],
+}
