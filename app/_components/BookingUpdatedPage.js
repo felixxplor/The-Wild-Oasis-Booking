@@ -169,10 +169,6 @@ export default function BookingUpdatedPage({ booking, session }) {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600 mt-0.5">•</span>
-              <span>Please arrive 5-10 minutes early for your appointment</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-blue-600 mt-0.5">•</span>
               <span>
                 If you need to make further changes, please do so at least 24 hours in advance
               </span>

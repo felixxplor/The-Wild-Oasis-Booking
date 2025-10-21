@@ -217,10 +217,6 @@ async function ThankYouContent({ searchParams }) {
               </p>
             </div>
             <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-              <p>Please arrive 5 minutes before your appointment time</p>
-            </div>
-            <div className="flex items-start gap-3">
               <Calendar className="w-5 h-5 text-blue-600 mt-0.5" />
               <p>Need to reschedule? Contact us or manage your booking in your appointments</p>
             </div>

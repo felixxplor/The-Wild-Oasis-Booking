@@ -63,7 +63,6 @@ Phone: (02) 9579 1881
 
 IMPORTANT
 ---------
-Please arrive 5 minutes before your appointment time.
 Cancellations must be made at least 24 hours in advance.
 
 If you need to make any changes to your appointment, please contact us at (02) 9579 1881 or reply to this email.
@@ -194,11 +193,6 @@ Nailaholics Nails & Beauty
                 </div>
 
                 <!-- Important notice -->
-                <div style="margin: 30px 0; padding: 15px; background-color: #fef2f2; border-left: 4px solid #ef4444;">
-                  <p style="margin: 0; color: #991b1b; font-size: 14px;">
-                    <strong>Important:</strong> Please arrive 5 minutes early. Cancellations require 24 hours notice.
-                  </p>
-                </div>
 
                 <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0;">
                   If you need to make any changes, please edit your appointment on the website or contact us:<br>
