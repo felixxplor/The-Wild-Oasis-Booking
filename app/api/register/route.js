@@ -31,7 +31,7 @@ export async function POST(request) {
       password,
       options: {
         emailRedirectTo: `${
-          process.env.NEXT_PUBLIC_SITE_URL || 'http://nailaholics.com.au'
+          process.env.NEXT_PUBLIC_SITE_URL || 'https://nailaholics.com.au'
         }/auth/callback`,
         data: {
           full_name: name,
