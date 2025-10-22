@@ -304,7 +304,7 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
         notes: notes.trim(),
       }
 
-      console.log('Updating booking with:', updateData)
+      // console.log('Updating booking with:', updateData)
 
       const result = await updateBooking(updateData)
 
@@ -316,7 +316,7 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
         setIsSubmitting(false)
       }
     } catch (err) {
-      console.error('Error updating booking:', err)
+      // console.error('Error updating booking:', err)
       setError(err.message || 'Failed to update booking')
       setIsSubmitting(false)
     }

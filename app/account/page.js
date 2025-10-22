@@ -54,7 +54,7 @@ async function ProfileContent() {
       error = 'Profile information not found'
     }
   } catch (err) {
-    console.error('Error loading profile:', err)
+    // console.error('Error loading profile:', err)
     error = 'Failed to load your profile information'
   }
 

@@ -108,7 +108,7 @@ function BookingSummary({
       setIsSubmitting(true)
       setError('')
 
-      console.log('Starting submission...')
+      // console.log('Starting submission...')
 
       // Validate the booking data
       validateBookingData()
@@ -116,15 +116,15 @@ function BookingSummary({
       // Create booking data object
       const bookingData = createBookingData()
 
-      console.log('Submitting booking:', bookingData)
+      // console.log('Submitting booking:', bookingData)
 
       // Call the server action to create the appointment
       const result = await createAppointment(bookingData, formData)
 
-      console.log('Result from server action:', result)
+      // console.log('Result from server action:', result)
 
       if (result.success) {
-        console.log('Booking successful! Redirecting to:', `/thankyou?booking=${result.bookingId}`)
+        // console.log('Booking successful! Redirecting to:', `/thankyou?booking=${result.bookingId}`)
 
         // Reset the reservation state
         resetReservation?.()
@@ -132,12 +132,12 @@ function BookingSummary({
         // Redirect to thank you page
         router.push(`/thankyou?booking=${result.bookingId}`)
       } else {
-        console.log('Booking failed:', result.error)
+        // console.log('Booking failed:', result.error)
         setError(result.error || 'Failed to create booking. Please try again.')
         setIsSubmitting(false)
       }
     } catch (error) {
-      console.error('Error creating booking:', error)
+      // console.error('Error creating booking:', error)
       setError(error.message || 'Failed to create booking. Please try again.')
       setIsSubmitting(false)
     }

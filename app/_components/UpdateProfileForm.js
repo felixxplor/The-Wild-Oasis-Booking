@@ -65,7 +65,7 @@ export default function UpdateProfileForm({ client }) {
         }, 3000)
       }
     } catch (err) {
-      console.error('Error updating profile:', err)
+      // console.error('Error updating profile:', err)
       setError(err.message || 'Failed to update profile. Please try again.')
     } finally {
       setIsLoading(false)

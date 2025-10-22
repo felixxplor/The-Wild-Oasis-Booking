@@ -32,7 +32,7 @@ export async function getStaffAbsences() {
     if (error) throw error
     return { success: true, data: data || [] }
   } catch (error) {
-    console.error('Error fetching staff absences:', error)
+    // console.error('Error fetching staff absences:', error)
     return { success: false, data: [], error: error.message }
   }
 }
@@ -59,7 +59,7 @@ export async function updateProfile(formData) {
 
     return { success: true }
   } catch (error) {
-    console.error('Error in updateProfile action:', error)
+    // console.error('Error in updateProfile action:', error)
     return { error: error.message }
   }
 }
@@ -125,14 +125,14 @@ export async function createAppointment(bookingData, formData) {
       bookingData.totalDuration
     )
 
-    console.log('Creating timestamps:', {
-      originalDate: bookingData.date,
-      originalTime: bookingData.time,
-      duration: bookingData.totalDuration,
-      dateString: dateString,
-      calculatedStartTime: startTime,
-      calculatedEndTime: endTime,
-    })
+    // console.log('Creating timestamps:', {
+    //   originalDate: bookingData.date,
+    //   originalTime: bookingData.time,
+    //   duration: bookingData.totalDuration,
+    //   dateString: dateString,
+    //   calculatedStartTime: startTime,
+    //   calculatedEndTime: endTime,
+    // })
 
     // Create the booking object matching your database schema
     const newBooking = {
@@ -152,7 +152,7 @@ export async function createAppointment(bookingData, formData) {
       endTime: endTime,
     }
 
-    console.log('Creating booking with data:', newBooking)
+    // console.log('Creating booking with data:', newBooking)
 
     // Create a single booking with all services
     const createdBooking = await createBooking(newBooking)
@@ -162,10 +162,10 @@ export async function createAppointment(bookingData, formData) {
       throw new Error('Booking was created but no booking object was returned')
     }
 
-    console.log('Booking created successfully:', createdBooking)
+    // console.log('Booking created successfully:', createdBooking)
 
     // Fetch services for email
-    console.log('📧 Fetching services for email, IDs:', bookingData.serviceIds)
+    // console.log('📧 Fetching services for email, IDs:', bookingData.serviceIds)
 
     const { data: servicesData, error: servicesError } = await supabase
       .from('services')
@@ -173,9 +173,9 @@ export async function createAppointment(bookingData, formData) {
       .in('id', bookingData.serviceIds)
 
     if (servicesError) {
-      console.error('❌ Error fetching services for email:', servicesError)
+      // console.error('❌ Error fetching services for email:', servicesError)
     } else {
-      console.log('✅ Services fetched for email:', servicesData)
+      // console.log('✅ Services fetched for email:', servicesData)
     }
 
     // Fetch staff for email
@@ -188,23 +188,23 @@ export async function createAppointment(bookingData, formData) {
         .single()
 
       if (staffError) {
-        console.error('❌ Error fetching staff for email:', staffError)
+        // console.error('❌ Error fetching staff for email:', staffError)
       } else {
         staffData = staff
-        console.log('✅ Staff fetched for email:', staffData?.name)
+        // console.log('✅ Staff fetched for email:', staffData?.name)
       }
     }
 
     // Send confirmation email to customer
-    console.log('📧 Attempting to send confirmation email to customer...')
-    console.log('📧 Email data prepared:', {
-      hasBooking: !!createdBooking,
-      hasServices: !!servicesData && servicesData.length > 0,
-      hasClientEmail: !!session.user.email,
-      hasClientName: !!session.user.name,
-      clientEmail: session.user.email,
-      clientName: session.user.name,
-    })
+    // console.log('📧 Attempting to send confirmation email to customer...')
+    // console.log('📧 Email data prepared:', {
+    //   hasBooking: !!createdBooking,
+    //   hasServices: !!servicesData && servicesData.length > 0,
+    //   hasClientEmail: !!session.user.email,
+    //   hasClientName: !!session.user.name,
+    //   clientEmail: session.user.email,
+    //   clientName: session.user.name,
+    // })
 
     try {
       await sendBookingConfirmationEmail({
@@ -214,14 +214,14 @@ export async function createAppointment(bookingData, formData) {
         services: servicesData || [],
         staff: staffData,
       })
-      console.log('✅ Customer confirmation email sent successfully')
+      // console.log('✅ Customer confirmation email sent successfully')
     } catch (emailError) {
-      console.error('❌ Failed to send customer confirmation email:', emailError)
-      console.error('❌ Email error details:', emailError.message)
+      // console.error('❌ Failed to send customer confirmation email:', emailError)
+      // console.error('❌ Email error details:', emailError.message)
     }
 
     // Send notification email to business
-    console.log('📧 Attempting to send notification email to business...')
+    // console.log('📧 Attempting to send notification email to business...')
     try {
       await sendBookingNotificationEmail({
         booking: createdBooking,
@@ -231,10 +231,10 @@ export async function createAppointment(bookingData, formData) {
         services: servicesData || [],
         staff: staffData,
       })
-      console.log('✅ Business notification email sent successfully')
+      // console.log('✅ Business notification email sent successfully')
     } catch (emailError) {
-      console.error('❌ Failed to send business notification email:', emailError)
-      console.error('❌ Email error details:', emailError.message)
+      // console.error('❌ Failed to send business notification email:', emailError)
+      // console.error('❌ Email error details:', emailError.message)
     }
 
     // Revalidate relevant paths
@@ -247,7 +247,7 @@ export async function createAppointment(bookingData, formData) {
       bookingId: createdBooking.id,
     }
   } catch (error) {
-    console.error('Error creating appointment:', error)
+    // console.error('Error creating appointment:', error)
 
     // Return error instead of throwing
     return {
@@ -292,7 +292,7 @@ export async function deleteReservation(bookingId) {
     const { error } = await supabase.from('bookings').delete().eq('id', bookingId)
 
     if (error) {
-      console.error('Supabase delete error:', error)
+      // console.error('Supabase delete error:', error)
       throw new Error(`Failed to delete booking: ${error.message}`)
     }
 
@@ -303,9 +303,9 @@ export async function deleteReservation(bookingId) {
         clientEmail: session.user.email,
         clientName: session.user.name,
       })
-      console.log('✅ Customer cancellation email sent successfully')
+      // console.log('✅ Customer cancellation email sent successfully')
     } catch (emailError) {
-      console.error('Failed to send customer cancellation email:', emailError)
+      // console.error('Failed to send customer cancellation email:', emailError)
       // Don't throw - cancellation was successful
     }
 
@@ -317,9 +317,9 @@ export async function deleteReservation(bookingId) {
         clientEmail: session.user.email,
         clientName: session.user.name,
       })
-      console.log('✅ Business cancellation notification sent successfully')
+      // console.log('✅ Business cancellation notification sent successfully')
     } catch (emailError) {
-      console.error('Failed to send business cancellation notification:', emailError)
+      // console.error('Failed to send business cancellation notification:', emailError)
       // Don't throw - cancellation was successful
     }
 
@@ -328,7 +328,7 @@ export async function deleteReservation(bookingId) {
 
     return { success: true }
   } catch (error) {
-    console.error('Error in deleteReservation:', error)
+    // console.error('Error in deleteReservation:', error)
     throw new Error(error.message || 'Failed to cancel booking')
   }
 }
@@ -391,11 +391,11 @@ export async function updateBooking(updateData) {
 
     const { dateString, startTime, endTime } = createTimestampWithoutTZ(date, time, totalDuration)
 
-    console.log('Updating booking with timestamps:', {
-      dateString,
-      startTime,
-      endTime,
-    })
+    // console.log('Updating booking with timestamps:', {
+    //   dateString,
+    //   startTime,
+    //   endTime,
+    // })
 
     // Update booking
     const { data, error } = await supabase
@@ -417,7 +417,7 @@ export async function updateBooking(updateData) {
       .single()
 
     if (error) {
-      console.error('Error updating booking:', error)
+      // console.error('Error updating booking:', error)
       throw new Error(`Failed to update booking: ${error.message}`)
     }
 
@@ -447,9 +447,9 @@ export async function updateBooking(updateData) {
         services: services || [],
         staff: staff,
       })
-      console.log('✅ Customer update email sent successfully')
+      // console.log('✅ Customer update email sent successfully')
     } catch (emailError) {
-      console.error('Failed to send customer update email:', emailError)
+      // console.error('Failed to send customer update email:', emailError)
       // Don't throw - update was successful
     }
 
@@ -464,20 +464,20 @@ export async function updateBooking(updateData) {
         staff: staff,
         previousBooking: existingBooking, // Optional: to show what changed
       })
-      console.log('✅ Business update notification sent successfully')
+      // console.log('✅ Business update notification sent successfully')
     } catch (emailError) {
-      console.error('Failed to send business update notification:', emailError)
+      // console.error('Failed to send business update notification:', emailError)
       // Don't throw - update was successful
     }
 
-    console.log('Booking updated successfully:', data)
+    // console.log('Booking updated successfully:', data)
 
     // Revalidate paths
     revalidatePath('/appointments')
 
     return { success: true }
   } catch (error) {
-    console.error('Error in updateBooking:', error)
+    // console.error('Error in updateBooking:', error)
     return {
       success: false,
       error: error.message || 'Failed to update booking',
@@ -521,7 +521,7 @@ async function checkTimeSlotAvailability({ date, time, staffId, duration }) {
 
     return !hasOverlap
   } catch (error) {
-    console.error('Error checking time slot availability:', error)
+    // console.error('Error checking time slot availability:', error)
     return false // Err on the side of caution
   }
 }
@@ -538,7 +538,7 @@ async function checkStaffServiceCompatibility({ staffId, serviceIds }) {
 
     return serviceIds.every((serviceId) => staffServiceIds.includes(serviceId))
   } catch (error) {
-    console.error('Error checking staff service compatibility:', error)
+    // console.error('Error checking staff service compatibility:', error)
     return false
   }
 }
@@ -554,7 +554,7 @@ async function calculateTotalPrice(serviceIds) {
       return total + price
     }, 0)
   } catch (error) {
-    console.error('Error calculating total price:', error)
+    // console.error('Error calculating total price:', error)
     throw new Error('Failed to calculate price')
   }
 }
@@ -610,7 +610,7 @@ export async function cancelBooking(bookingId) {
       .single()
 
     if (error) {
-      console.error('Error cancelling booking:', error)
+      // console.error('Error cancelling booking:', error)
       throw new Error('Failed to cancel booking')
     }
 
@@ -622,14 +622,14 @@ export async function cancelBooking(bookingId) {
         clientName: session.user.name,
       })
     } catch (emailError) {
-      console.error('Failed to send cancellation email:', emailError)
+      // console.error('Failed to send cancellation email:', emailError)
     }
 
     revalidatePath('/appointments')
 
     return { success: true }
   } catch (error) {
-    console.error('Error in cancelBooking:', error)
+    // console.error('Error in cancelBooking:', error)
     throw error
   }
 }

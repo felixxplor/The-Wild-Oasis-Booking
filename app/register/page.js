@@ -106,7 +106,7 @@ export default function RegisterPage() {
         }, 1500)
       }
     } catch (error) {
-      console.error('Registration error:', error)
+      // console.error('Registration error:', error)
       setError(error.message || 'An error occurred during registration')
     } finally {
       setIsLoading(false)

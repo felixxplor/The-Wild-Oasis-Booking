@@ -43,18 +43,18 @@ async function AppointmentsContent() {
   }
 
   // Debug: Check if clientId exists
-  console.log('Session user:', session.user)
-  console.log('Client ID:', session.user.clientId)
+  // console.log('Session user:', session.user)
+  // console.log('Client ID:', session.user.clientId)
 
   let bookings = []
   let error = null
 
   try {
-    console.log('Fetching bookings for clientId:', session.user.clientId)
+    // console.log('Fetching bookings for clientId:', session.user.clientId)
     bookings = await getClientBookings(session.user.clientId)
-    console.log('Bookings fetched successfully:', bookings.length)
+    // console.log('Bookings fetched successfully:', bookings.length)
   } catch (err) {
-    console.error('Error loading bookings:', err)
+    // console.error('Error loading bookings:', err)
     error = err.message || 'Failed to load your appointments. Please try again later.'
   }
 

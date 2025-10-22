@@ -36,7 +36,7 @@ const authConfig = {
           })
 
           if (error || !data.user) {
-            console.error('Supabase auth error:', error?.message)
+            // console.error('Supabase auth error:', error?.message)
             return null
           }
 
@@ -48,7 +48,7 @@ const authConfig = {
             // Add any other user properties you need
           }
         } catch (error) {
-          console.error('Authentication error:', error)
+          // console.error('Authentication error:', error)
           return null
         }
       },
@@ -63,22 +63,22 @@ const authConfig = {
     // This callback actually runs before the actual sign in process happens. That means we can perform all kinds of operations here that are associated with the signin process. So, it's a bit like a middleware.
     async signIn({ user, account, profile }) {
       try {
-        console.log('SignIn callback - User:', user)
-        console.log('SignIn callback - Account:', account)
+        // console.log('SignIn callback - User:', user)
+        // console.log('SignIn callback - Account:', account)
 
         const existingClient = await getClient(user.email)
-        console.log('Existing client found:', existingClient)
+        // console.log('Existing client found:', existingClient)
 
         if (!existingClient) {
-          console.log('Creating new client for:', user.email)
+          // console.log('Creating new client for:', user.email)
           await createClient({ email: user.email, fullName: user.name })
         } else {
-          console.log('Client already exists, skipping creation')
+          // console.log('Client already exists, skipping creation')
         }
 
         return true
       } catch (error) {
-        console.error('SignIn callback error:', error)
+        // console.error('SignIn callback error:', error)
         return false
       }
     },
@@ -99,7 +99,7 @@ const authConfig = {
 
         return session
       } catch (error) {
-        console.error('Session callback error:', error)
+        // console.error('Session callback error:', error)
         return session
       }
     },

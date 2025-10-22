@@ -127,7 +127,7 @@ function AppointmentCard({ booking, userEmail }) {
       setShowCancelConfirm(false)
       alert('Booking cancelled successfully!')
     } catch (error) {
-      console.error('Error cancelling booking:', error)
+      // console.error('Error cancelling booking:', error)
       alert(error.message || 'Failed to cancel booking. Please try again or contact us.')
     } finally {
       setIsCancelling(false)

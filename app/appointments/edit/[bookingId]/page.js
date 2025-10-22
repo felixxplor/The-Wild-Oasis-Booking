@@ -47,7 +47,7 @@ async function EditBookingContent({ params }) {
   try {
     booking = await getBooking(bookingId)
   } catch (error) {
-    console.error('Error fetching booking:', error)
+    // console.error('Error fetching booking:', error)
     notFound()
   }
 

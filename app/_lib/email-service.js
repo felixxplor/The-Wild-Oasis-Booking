@@ -9,8 +9,8 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function sendBookingConfirmationEmail(data) {
   try {
-    console.log('📧 [EMAIL] Starting confirmation email')
-    console.log('📧 [EMAIL] Recipient:', data.clientEmail)
+    // console.log('📧 [EMAIL] Starting confirmation email')
+    // console.log('📧 [EMAIL] Recipient:', data.clientEmail)
 
     const { clientEmail, clientName, booking, services, staff } = data
 
@@ -28,10 +28,10 @@ export async function sendBookingConfirmationEmail(data) {
       totalDuration,
     })
 
-    console.log('📧 [EMAIL] Calling Resend API...')
-    console.log('📧 [EMAIL] From:', 'NAILAHOLICS <bookings@nailaholics.com.au>')
-    console.log('📧 [EMAIL] To:', clientEmail)
-    console.log('📧 [EMAIL] Subject:', emailTemplate.subject)
+    // console.log('📧 [EMAIL] Calling Resend API...')
+    // console.log('📧 [EMAIL] From:', 'NAILAHOLICS <bookings@nailaholics.com.au>')
+    // console.log('📧 [EMAIL] To:', clientEmail)
+    // console.log('📧 [EMAIL] Subject:', emailTemplate.subject)
 
     const { data: emailData, error } = await resend.emails.send({
       from: 'Nailaholics Nails & Beauty <bookings@nailaholics.com.au>',
@@ -43,26 +43,26 @@ export async function sendBookingConfirmationEmail(data) {
     })
 
     if (error) {
-      console.error('❌ [EMAIL] Resend API error:', error)
-      console.error('❌ [EMAIL] Error details:', JSON.stringify(error, null, 2))
+      // console.error('❌ [EMAIL] Resend API error:', error)
+      // console.error('❌ [EMAIL] Error details:', JSON.stringify(error, null, 2))
       throw new Error(`Resend error: ${error.message}`)
     }
 
-    console.log('✅ [EMAIL] Email sent successfully!')
-    console.log('✅ [EMAIL] Email ID:', emailData?.id)
-    console.log('✅ [EMAIL] Full response:', JSON.stringify(emailData, null, 2))
+    // console.log('✅ [EMAIL] Email sent successfully!')
+    // console.log('✅ [EMAIL] Email ID:', emailData?.id)
+    // console.log('✅ [EMAIL] Full response:', JSON.stringify(emailData, null, 2))
 
     return emailData
   } catch (error) {
-    console.error('❌ [EMAIL] Fatal error:', error)
-    console.error('❌ [EMAIL] Stack:', error.stack)
+    // console.error('❌ [EMAIL] Fatal error:', error)
+    // console.error('❌ [EMAIL] Stack:', error.stack)
     throw error
   }
 }
 
 export async function sendBookingUpdateEmail(data) {
   try {
-    console.log('📧 [EMAIL SERVICE] Starting sendBookingUpdateEmail')
+    // console.log('📧 [EMAIL SERVICE] Starting sendBookingUpdateEmail')
     const { clientEmail, clientName, booking, services, staff } = data
 
     const totalPrice = booking.totalPrice
@@ -77,7 +77,7 @@ export async function sendBookingUpdateEmail(data) {
       totalDuration,
     })
 
-    console.log('📧 [EMAIL SERVICE] Calling Resend API for update email...')
+    // console.log('📧 [EMAIL SERVICE] Calling Resend API for update email...')
 
     const { data: emailData, error } = await resend.emails.send({
       from: 'Nailaholics Nails & Beauty <bookings@nailaholics.com.au>',
@@ -89,21 +89,21 @@ export async function sendBookingUpdateEmail(data) {
     })
 
     if (error) {
-      console.error('❌ [EMAIL SERVICE] Resend error:', error)
+      // console.error('❌ [EMAIL SERVICE] Resend error:', error)
       throw new Error(`Resend error: ${error.message}`)
     }
 
-    console.log('✅ [EMAIL SERVICE] Update email sent successfully!')
+    // console.log('✅ [EMAIL SERVICE] Update email sent successfully!')
     return emailData
   } catch (error) {
-    console.error('❌ [EMAIL SERVICE] Error in sendBookingUpdateEmail:', error)
+    // console.error('❌ [EMAIL SERVICE] Error in sendBookingUpdateEmail:', error)
     throw error
   }
 }
 
 export async function sendCancellationEmail(data) {
   try {
-    console.log('📧 [EMAIL SERVICE] Starting sendCancellationEmail')
+    // console.log('📧 [EMAIL SERVICE] Starting sendCancellationEmail')
     const { clientEmail, clientName, booking } = data
 
     const emailTemplate = bookingCancellationTemplate({
@@ -111,7 +111,7 @@ export async function sendCancellationEmail(data) {
       clientName,
     })
 
-    console.log('📧 [EMAIL SERVICE] Calling Resend API for cancellation email...')
+    // console.log('📧 [EMAIL SERVICE] Calling Resend API for cancellation email...')
 
     const { data: emailData, error } = await resend.emails.send({
       from: 'Nailaholics Nails & Beauty <bookings@nailaholics.com.au>',
@@ -123,21 +123,21 @@ export async function sendCancellationEmail(data) {
     })
 
     if (error) {
-      console.error('❌ [EMAIL SERVICE] Resend error:', error)
+      // console.error('❌ [EMAIL SERVICE] Resend error:', error)
       throw new Error(`Resend error: ${error.message}`)
     }
 
-    console.log('✅ [EMAIL SERVICE] Cancellation email sent successfully!')
+    // console.log('✅ [EMAIL SERVICE] Cancellation email sent successfully!')
     return emailData
   } catch (error) {
-    console.error('❌ [EMAIL SERVICE] Error in sendCancellationEmail:', error)
+    // console.error('❌ [EMAIL SERVICE] Error in sendCancellationEmail:', error)
     throw error
   }
 }
 
 export async function sendBookingUpdateNotificationEmail(data) {
   try {
-    console.log('📧 [EMAIL SERVICE] Starting sendBookingUpdateNotificationEmail')
+    // console.log('📧 [EMAIL SERVICE] Starting sendBookingUpdateNotificationEmail')
     const { businessEmail, clientEmail, clientName, booking, services, staff, previousBooking } =
       data
 
@@ -308,7 +308,7 @@ Please review and confirm this updated booking.
 </html>
     `.trim()
 
-    console.log('📧 [EMAIL SERVICE] Calling Resend API for business update notification...')
+    // console.log('📧 [EMAIL SERVICE] Calling Resend API for business update notification...')
 
     const { data: emailData, error } = await resend.emails.send({
       from: 'Nailaholics Nails & Beauty <bookings@nailaholics.com.au>',
@@ -319,21 +319,21 @@ Please review and confirm this updated booking.
     })
 
     if (error) {
-      console.error('❌ [EMAIL SERVICE] Resend error:', error)
+      // console.error('❌ [EMAIL SERVICE] Resend error:', error)
       throw new Error(`Resend error: ${error.message}`)
     }
 
-    console.log('✅ [EMAIL SERVICE] Business update notification sent successfully!')
+    // console.log('✅ [EMAIL SERVICE] Business update notification sent successfully!')
     return emailData
   } catch (error) {
-    console.error('❌ [EMAIL SERVICE] Error in sendBookingUpdateNotificationEmail:', error)
+    // console.error('❌ [EMAIL SERVICE] Error in sendBookingUpdateNotificationEmail:', error)
     throw error
   }
 }
 
 export async function sendCancellationNotificationEmail(data) {
   try {
-    console.log('📧 [EMAIL SERVICE] Starting sendCancellationNotificationEmail')
+    // console.log('📧 [EMAIL SERVICE] Starting sendCancellationNotificationEmail')
     const { businessEmail, clientEmail, clientName, booking, services, staff } = data
 
     const totalPrice = booking.totalPrice || booking.price
@@ -483,7 +483,7 @@ This time slot is now available for other bookings.
 </html>
     `.trim()
 
-    console.log('📧 [EMAIL SERVICE] Calling Resend API for business cancellation notification...')
+    // console.log('📧 [EMAIL SERVICE] Calling Resend API for business cancellation notification...')
 
     const { data: emailData, error } = await resend.emails.send({
       from: 'Nailaholics Nails & Beauty <bookings@nailaholics.com.au>',
@@ -494,21 +494,21 @@ This time slot is now available for other bookings.
     })
 
     if (error) {
-      console.error('❌ [EMAIL SERVICE] Resend error:', error)
+      // console.error('❌ [EMAIL SERVICE] Resend error:', error)
       throw new Error(`Resend error: ${error.message}`)
     }
 
-    console.log('✅ [EMAIL SERVICE] Business cancellation notification sent successfully!')
+    // console.log('✅ [EMAIL SERVICE] Business cancellation notification sent successfully!')
     return emailData
   } catch (error) {
-    console.error('❌ [EMAIL SERVICE] Error in sendCancellationNotificationEmail:', error)
+    // console.error('❌ [EMAIL SERVICE] Error in sendCancellationNotificationEmail:', error)
     throw error
   }
 }
 
 export async function sendBookingNotificationEmail(data) {
   try {
-    console.log('📧 [EMAIL SERVICE] Starting sendBookingNotificationEmail')
+    // console.log('📧 [EMAIL SERVICE] Starting sendBookingNotificationEmail')
     const { businessEmail, clientEmail, clientName, booking, services, staff } = data
 
     const totalPrice = booking.totalPrice || booking.price
@@ -664,7 +664,7 @@ Please confirm this booking as soon as possible.
 </html>
     `.trim()
 
-    console.log('📧 [EMAIL SERVICE] Calling Resend API for business booking notification...')
+    // console.log('📧 [EMAIL SERVICE] Calling Resend API for business booking notification...')
 
     const { data: emailData, error } = await resend.emails.send({
       from: 'Nailaholics Nails & Beauty <bookings@nailaholics.com.au>',
@@ -675,14 +675,14 @@ Please confirm this booking as soon as possible.
     })
 
     if (error) {
-      console.error('❌ [EMAIL SERVICE] Resend error:', error)
+      // console.error('❌ [EMAIL SERVICE] Resend error:', error)
       throw new Error(`Resend error: ${error.message}`)
     }
 
-    console.log('✅ [EMAIL SERVICE] Business booking notification sent successfully!')
+    // console.log('✅ [EMAIL SERVICE] Business booking notification sent successfully!')
     return emailData
   } catch (error) {
-    console.error('❌ [EMAIL SERVICE] Error in sendBookingNotificationEmail:', error)
+    // console.error('❌ [EMAIL SERVICE] Error in sendBookingNotificationEmail:', error)
     throw error
   }
 }

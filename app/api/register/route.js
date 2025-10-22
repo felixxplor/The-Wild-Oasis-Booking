@@ -55,7 +55,7 @@ export async function POST(request) {
       ])
 
       if (profileError) {
-        console.error('Profile creation error:', profileError)
+        // console.error('Profile creation error:', profileError)
         // Don't fail the registration if profile creation fails
         // The user account is already created in auth
       }
@@ -66,7 +66,7 @@ export async function POST(request) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Registration error:', error)
+    // console.error('Registration error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

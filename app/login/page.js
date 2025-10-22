@@ -82,7 +82,7 @@ export default function LoginPage() {
         router.push(redirectUrl)
       }
     } catch (error) {
-      console.error('Login error:', error)
+      // console.error('Login error:', error)
       setError(error.message || 'An error occurred during login')
     } finally {
       setIsLoading(false)

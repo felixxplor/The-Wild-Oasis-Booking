@@ -113,7 +113,7 @@ export default function DateSelector({
       if (result.success) {
         setStaffAbsences(result.data)
       } else {
-        console.error('Error:', result.error)
+        // console.error('Error:', result.error)
         setStaffAbsences([])
       }
       setIsLoadingAbsences(false)
@@ -141,7 +141,7 @@ export default function DateSelector({
       availableStaff.forEach((staff) => {
         // Check if staff is absent on this date
         if (isStaffAbsent(staff.id, date, staffAbsences)) {
-          console.log(`Staff ${staff.name} is absent on ${format(date, 'yyyy-MM-dd')}`)
+          // console.log(`Staff ${staff.name} is absent on ${format(date, 'yyyy-MM-dd')}`)
           return // Skip this staff member
         }
 
@@ -162,9 +162,9 @@ export default function DateSelector({
     } else if (selectedStaff) {
       // Check if the selected staff is absent on this date
       if (isStaffAbsent(selectedStaff.id, date, staffAbsences)) {
-        console.log(
-          `Selected staff ${selectedStaff.name} is absent on ${format(date, 'yyyy-MM-dd')}`
-        )
+        // console.log(
+        //   `Selected staff ${selectedStaff.name} is absent on ${format(date, 'yyyy-MM-dd')}`
+        // )
         setAvailableTimes([])
         return
       }

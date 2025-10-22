@@ -34,7 +34,7 @@ export const getStaffFullInfo = async function () {
     `)
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     throw new Error('Staff full info could not be loaded')
   }
 
@@ -50,7 +50,7 @@ export async function getService(id) {
   // await new Promise((res) => setTimeout(res, 2000));
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     notFound()
   }
 
@@ -65,7 +65,7 @@ export async function getCabinPrice(id) {
     .single()
 
   if (error) {
-    console.error(error)
+    // console.error(error)
   }
 
   return data
@@ -81,7 +81,7 @@ export const getServices = async function () {
   // await new Promise((res) => setTimeout(res, 1000));
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     throw new Error('Services could not be loaded')
   }
 
@@ -100,7 +100,7 @@ export async function getBooking(id) {
   const { data, error, count } = await supabase.from('bookings').select('*').eq('id', id).single()
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     throw new Error('Booking could not get loaded')
   }
 
@@ -118,7 +118,7 @@ export async function getBookings(clientId) {
     .order('startDate')
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     throw new Error('Bookings could not get loaded')
   }
 
@@ -127,11 +127,11 @@ export async function getBookings(clientId) {
 
 export async function getClientBookings(clientId) {
   if (!clientId) {
-    console.error('No clientId provided to getClientBookings')
+    // console.error('No clientId provided to getClientBookings')
     throw new Error('Client ID is required')
   }
 
-  console.log('Fetching bookings for clientId:', clientId)
+  // console.log('Fetching bookings for clientId:', clientId)
 
   try {
     // Fetch bookings with staff relation (only select columns that exist)
@@ -150,16 +150,16 @@ export async function getClientBookings(clientId) {
       .order('date', { ascending: false })
 
     if (bookingsError) {
-      console.error('Supabase error fetching bookings:', bookingsError)
+      // console.error('Supabase error fetching bookings:', bookingsError)
       throw new Error(`Database error: ${bookingsError.message}`)
     }
 
     if (!bookings || bookings.length === 0) {
-      console.log('No bookings found for this client')
+      // console.log('No bookings found for this client')
       return []
     }
 
-    console.log('Successfully fetched bookings:', bookings.length)
+    // console.log('Successfully fetched bookings:', bookings.length)
 
     // Extract all unique service IDs from all bookings
     const allServiceIds = [
@@ -178,7 +178,7 @@ export async function getClientBookings(clientId) {
       ),
     ]
 
-    console.log('Fetching services for IDs:', allServiceIds)
+    // console.log('Fetching services for IDs:', allServiceIds)
 
     // Fetch all services in one query
     let servicesData = []
@@ -189,14 +189,14 @@ export async function getClientBookings(clientId) {
         .in('id', allServiceIds)
 
       if (servicesError) {
-        console.error('Error fetching services:', servicesError)
+        // console.error('Error fetching services:', servicesError)
         // Don't throw here, just log and continue without services
       } else {
         servicesData = services || []
       }
     }
 
-    console.log('Fetched services:', servicesData.length)
+    // console.log('Fetched services:', servicesData.length)
 
     // Manually join services to bookings
     const enrichedBookings = bookings.map((booking) => {
@@ -221,7 +221,7 @@ export async function getClientBookings(clientId) {
 
     return enrichedBookings
   } catch (err) {
-    console.error('Error in getClientBookings:', err)
+    // console.error('Error in getClientBookings:', err)
     throw err
   }
 }
@@ -239,7 +239,7 @@ export async function getBookedDatesByServiceId(serviceId) {
     .or(`date.gte.${today},status.eq.checked-in`)
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     throw new Error('Bookings could not get loaded')
   }
 
@@ -256,7 +256,7 @@ export async function getSettings() {
   // await new Promise((res) => setTimeout(res, 5000));
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     throw new Error('Settings could not be loaded')
   }
 
@@ -280,7 +280,7 @@ export async function createClient(newClient) {
   const { data, error } = await supabase.from('client').insert([newClient])
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     throw new Error('Client could not be created')
   }
 
@@ -295,7 +295,7 @@ export async function createBooking(newBooking) {
     .single() // Add this to return a single object instead of array
 
   if (error) {
-    console.error('Supabase error:', error)
+    // console.error('Supabase error:', error)
     throw new Error('Booking could not be created')
   }
 
@@ -315,7 +315,7 @@ export async function updateClient(id, updatedFields) {
     .single()
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     throw new Error('Client could not be updated')
   }
   return data
@@ -330,7 +330,7 @@ export async function updateBooking(id, updatedFields) {
     .single()
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     throw new Error('Booking could not be updated')
   }
   return data
@@ -343,7 +343,7 @@ export async function deleteBooking(id) {
   const { data, error } = await supabase.from('bookings').delete().eq('id', id)
 
   if (error) {
-    console.error(error)
+    // console.error(error)
     throw new Error('Booking could not be deleted')
   }
   return data

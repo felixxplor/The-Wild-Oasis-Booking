@@ -80,7 +80,7 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
         }, 300)
         sessionStorage.removeItem('bookingState')
       } catch (error) {
-        console.error('Error restoring booking state:', error)
+        // console.error('Error restoring booking state:', error)
         sessionStorage.removeItem('bookingState')
       }
     }
