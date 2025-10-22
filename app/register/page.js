@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [message, setMessage] = useState('')
 
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -34,10 +35,14 @@ export default function RegisterPage() {
       return
     }
 
-    // Basic phone validation (adjust pattern as needed)
-    const phoneRegex = /^[\+]?[0-9][\d]{0,15}$/
-    if (!phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''))) {
-      setError('Please enter a valid phone number')
+    // Clean phone number and validate
+    const cleanedPhone = phone.trim().replace(/[\s\-\(\)]/g, '')
+
+    // Updated regex - more lenient for international numbers
+    const phoneRegex = /^\+?\d{8,15}$/
+
+    if (!phoneRegex.test(cleanedPhone)) {
+      setError('Please enter a valid phone number (8-15 digits)')
       setIsLoading(false)
       return
     }
@@ -55,32 +60,51 @@ export default function RegisterPage() {
     }
 
     try {
+      const requestBody = {
+        name: name.trim(),
+        email: email.trim(),
+        phone: cleanedPhone,
+        password,
+      }
+
       // Call server action for registration
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          password,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Registration failed')
+        throw new Error(result.error || result.message || 'Registration failed')
       }
 
-      setMessage('Registration successful! Redirecting to login...')
+      setMessage('Registration successful! Redirecting...')
 
-      // Redirect to login after a delay
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
+      // Get all redirect parameters from URL
+      const redirect = searchParams.get('redirect')
+      const services = searchParams.get('services')
+      const artist = searchParams.get('artist')
+      const date = searchParams.get('date')
+      const time = searchParams.get('time')
+
+      // If we have booking parameters, redirect to login with all params
+      // Login page will handle the final redirect to booking-summary
+      if (redirect && services && artist && date && time) {
+        const loginUrl = `/login?redirect=${redirect}&services=${services}&artist=${artist}&date=${date}&time=${time}`
+
+        setTimeout(() => {
+          router.push(loginUrl)
+        }, 1500)
+      } else {
+        // No booking params, just go to login
+        setTimeout(() => {
+          router.push('/login')
+        }, 1500)
+      }
     } catch (error) {
       console.error('Registration error:', error)
       setError(error.message || 'An error occurred during registration')

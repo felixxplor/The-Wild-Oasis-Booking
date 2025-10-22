@@ -57,6 +57,17 @@ export default function LoginPage() {
       }
 
       if (result?.ok) {
+        // Save booking state to sessionStorage if we have booking parameters
+        if (services && artist && date && time) {
+          const bookingState = {
+            selectedServices: services.split(',').map((id) => parseInt(id)),
+            selectedArtist: artist,
+            date: date,
+            time: time,
+          }
+          sessionStorage.setItem('bookingState', JSON.stringify(bookingState))
+        }
+
         // Build redirect URL with preserved params
         let redirectUrl = redirect
         if (services || artist || date || time) {
@@ -76,6 +87,19 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Build register URL with all query params
+  const buildRegisterUrl = () => {
+    const params = new URLSearchParams()
+    if (redirect) params.set('redirect', redirect)
+    if (services) params.set('services', services)
+    if (artist) params.set('artist', artist)
+    if (date) params.set('date', date)
+    if (time) params.set('time', time)
+
+    const queryString = params.toString()
+    return queryString ? `/register?${queryString}` : '/register'
   }
 
   return (
@@ -129,7 +153,7 @@ export default function LoginPage() {
 
       <p className="mt-6 text-sm text-[#414141]">
         Do not have an account?{' '}
-        <a href="/register" className="underline hover:text-black">
+        <a href={buildRegisterUrl()} className="underline hover:text-black">
           Register here
         </a>
       </p>

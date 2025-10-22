@@ -17,9 +17,11 @@ export async function POST(request) {
       )
     }
 
-    // Basic phone validation
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
-    if (!phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''))) {
+    // Fixed phone validation - allows numbers starting with 0
+    const cleanedPhone = phone.replace(/[\s\-\(\)]/g, '')
+    const phoneRegex = /^\+?\d{8,15}$/
+
+    if (!phoneRegex.test(cleanedPhone)) {
       return NextResponse.json({ error: 'Please enter a valid phone number' }, { status: 400 })
     }
 
@@ -29,11 +31,11 @@ export async function POST(request) {
       password,
       options: {
         emailRedirectTo: `${
-          process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+          process.env.NEXT_PUBLIC_SITE_URL || 'http://nailaholics.com.au'
         }/auth/callback`,
         data: {
           full_name: name,
-          phone: phone,
+          phone: cleanedPhone, // Use cleaned phone
         },
       },
     })
@@ -48,7 +50,7 @@ export async function POST(request) {
         {
           email: data.user.email,
           fullName: name,
-          phone: phone,
+          phone: cleanedPhone, // Use cleaned phone
         },
       ])
 

@@ -14,6 +14,28 @@ import {
   sendCancellationEmail,
   sendCancellationNotificationEmail,
 } from './email-service'
+import { addMonths } from 'date-fns'
+
+export async function getStaffAbsences() {
+  try {
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0] // Format: YYYY-MM-DD
+    const maxDate = addMonths(today, 3)
+    const maxDateStr = maxDate.toISOString().split('T')[0]
+
+    const { data, error } = await supabase
+      .from('staff_absences')
+      .select('*')
+      .gte('absenceDate', todayStr)
+      .lte('absenceDate', maxDateStr)
+
+    if (error) throw error
+    return { success: true, data: data || [] }
+  } catch (error) {
+    console.error('Error fetching staff absences:', error)
+    return { success: false, data: [], error: error.message }
+  }
+}
 
 export async function updateProfile(formData) {
   try {

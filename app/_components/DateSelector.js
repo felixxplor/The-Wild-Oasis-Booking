@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
-import { getDay, isPast, isSameDay, addMonths, startOfMonth, endOfMonth } from 'date-fns'
+import { getDay, isPast, isSameDay, addMonths, format } from 'date-fns'
 import { useReservation } from './ReservationContext'
+import { getStaffAbsences } from '../_lib/actions'
 
 function generateTimeSlots(startTime, endTime, durationMinutes = 30, serviceDuration = 60) {
   const slots = []
@@ -33,15 +34,12 @@ function hasBookingConflict(bookings, targetDate, targetTime, serviceDuration) {
   const day = String(targetDate.getDate()).padStart(2, '0')
   const targetDateStr = `${year}-${month}-${day}`
 
-  console.log('Checking conflicts for date:', targetDateStr, 'time:', targetTime)
-
   const [targetHour, targetMinute] = targetTime.split(':').map(Number)
   const targetStartMinutes = targetHour * 60 + targetMinute
   const targetEndMinutes = targetStartMinutes + serviceDuration
 
   return bookings.some((booking) => {
     if (!booking.startTime || !booking.endTime) {
-      console.log('Skipping booking without time data:', booking)
       return false
     }
 
@@ -49,7 +47,6 @@ function hasBookingConflict(bookings, targetDate, targetTime, serviceDuration) {
     const endDateTime = new Date(booking.endTime)
 
     if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-      console.log('Invalid booking dates:', booking)
       return false
     }
 
@@ -60,17 +57,7 @@ function hasBookingConflict(bookings, targetDate, targetTime, serviceDuration) {
     const bookingStartTime = startDateTime.toTimeString().split(' ')[0]
     const bookingEndTime = endDateTime.toTimeString().split(' ')[0]
 
-    console.log('Comparing with booking:', {
-      bookingId: booking.id,
-      bookingDateStr,
-      targetDateStr,
-      bookingStartTime,
-      bookingEndTime,
-      booking,
-    })
-
     if (bookingDateStr !== targetDateStr) {
-      console.log('Date mismatch:', bookingDateStr, '!==', targetDateStr)
       return false
     }
 
@@ -85,32 +72,18 @@ function hasBookingConflict(bookings, targetDate, targetTime, serviceDuration) {
       (targetEndMinutes > bookingStartMinutes && targetEndMinutes <= bookingEndMinutes) ||
       (targetStartMinutes <= bookingStartMinutes && targetEndMinutes >= bookingEndMinutes)
 
-    console.log('Time conflict check:', {
-      targetTime: targetTime,
-      targetStartMinutes,
-      targetEndMinutes,
-      serviceDuration,
-      bookingStartTime,
-      bookingEndTime,
-      bookingStartMinutes,
-      bookingEndMinutes,
-      hasConflict,
-      targetTimeRange: `${targetTime} - ${Math.floor(targetEndMinutes / 60)
-        .toString()
-        .padStart(2, '0')}:${(targetEndMinutes % 60).toString().padStart(2, '0')}`,
-      bookingTimeRange: `${bookingStartTime} - ${bookingEndTime}`,
-    })
-
-    if (hasConflict) {
-      console.log('⚠️ BOOKING CONFLICT DETECTED:', {
-        targetDate: targetDateStr,
-        targetTime: targetTime,
-        targetDuration: serviceDuration,
-        conflictingBooking: booking,
-      })
-    }
-
     return hasConflict
+  })
+}
+
+// NEW: Check if staff is absent on a specific date
+function isStaffAbsent(staffId, date, staffAbsences) {
+  if (!staffAbsences || staffAbsences.length === 0) return false
+
+  const dateStr = format(date, 'yyyy-MM-dd')
+
+  return staffAbsences.some((absence) => {
+    return absence.staffId === staffId && absence.absenceDate === dateStr
   })
 }
 
@@ -121,25 +94,36 @@ export default function DateSelector({
   isAnyArtist = false,
   availableStaff = [],
   selectedStaff = null,
-  // NEW: Optional props for controlled component (used in edit page)
   reservation: externalReservation,
   setReservation: externalSetReservation,
 }) {
-  // Use context if external props not provided (booking page)
   const contextReservation = useReservation()
-
-  // Determine which reservation state to use
   const reservation = externalReservation || contextReservation?.reservation || {}
   const setReservation = externalSetReservation || contextReservation?.setReservation || (() => {})
 
   const [availableTimes, setAvailableTimes] = useState([])
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [staffAbsences, setStaffAbsences] = useState([])
+  const [isLoadingAbsences, setIsLoadingAbsences] = useState(true)
 
-  // Calculate date range (current month to 3 months ahead)
+  useEffect(() => {
+    const fetchAbsences = async () => {
+      setIsLoadingAbsences(true)
+      const result = await getStaffAbsences()
+      if (result.success) {
+        setStaffAbsences(result.data)
+      } else {
+        console.error('Error:', result.error)
+        setStaffAbsences([])
+      }
+      setIsLoadingAbsences(false)
+    }
+    fetchAbsences()
+  }, [])
+
   const today = new Date()
   const maxDate = addMonths(today, 3)
 
-  // Handle selecting a date
   const handleDateSelect = (date) => {
     setReservation({ ...reservation, date, time: undefined })
 
@@ -155,6 +139,12 @@ export default function DateSelector({
       const allPossibleSlots = new Set()
 
       availableStaff.forEach((staff) => {
+        // Check if staff is absent on this date
+        if (isStaffAbsent(staff.id, date, staffAbsences)) {
+          console.log(`Staff ${staff.name} is absent on ${format(date, 'yyyy-MM-dd')}`)
+          return // Skip this staff member
+        }
+
         const staffShiftsForDay = staff.staff_shifts?.filter((s) => s.dayOfWeek === dayOfWeek) || []
 
         staffShiftsForDay.forEach((shift) => {
@@ -170,6 +160,15 @@ export default function DateSelector({
 
       availableSlots = Array.from(allPossibleSlots).sort()
     } else if (selectedStaff) {
+      // Check if the selected staff is absent on this date
+      if (isStaffAbsent(selectedStaff.id, date, staffAbsences)) {
+        console.log(
+          `Selected staff ${selectedStaff.name} is absent on ${format(date, 'yyyy-MM-dd')}`
+        )
+        setAvailableTimes([])
+        return
+      }
+
       const shiftsForDay =
         selectedStaff.staff_shifts?.filter((s) => s.dayOfWeek === dayOfWeek) || []
 
@@ -212,33 +211,44 @@ export default function DateSelector({
       {/* Calendar */}
       <div className="p-6 date-picker-container">
         <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">Select Date</h3>
-        <DayPicker
-          mode="single"
-          selected={reservation.date}
-          onSelect={handleDateSelect}
-          month={currentMonth}
-          onMonthChange={setCurrentMonth}
-          fromDate={today}
-          toDate={maxDate}
-          numberOfMonths={1}
-          showOutsideDays={false}
-          disabled={(date) => {
-            if (isPast(date)) return true
-            const dayOfWeek = getDay(date)
+        {isLoadingAbsences ? (
+          <div className="text-center py-8 text-gray-500">Loading availability...</div>
+        ) : (
+          <DayPicker
+            mode="single"
+            selected={reservation.date}
+            onSelect={handleDateSelect}
+            month={currentMonth}
+            onMonthChange={setCurrentMonth}
+            fromDate={today}
+            toDate={maxDate}
+            numberOfMonths={1}
+            showOutsideDays={false}
+            disabled={(date) => {
+              if (isPast(date)) return true
+              const dayOfWeek = getDay(date)
 
-            if (isAnyArtist) {
-              return !availableStaff.some((staff) =>
-                staff.staff_shifts?.some((shift) => shift.dayOfWeek === dayOfWeek)
-              )
-            } else if (selectedStaff) {
-              return !selectedStaff.staff_shifts?.some((shift) => shift.dayOfWeek === dayOfWeek)
-            } else {
-              const staffAvailableDays = staffShifts.map((s) => s.dayOfWeek)
-              return !staffAvailableDays.includes(dayOfWeek)
-            }
-          }}
-          className="mx-auto"
-        />
+              if (isAnyArtist) {
+                // Check if ALL staff are either absent or don't work on this day
+                const availableStaffForDay = availableStaff.filter((staff) => {
+                  // Skip if staff is absent
+                  if (isStaffAbsent(staff.id, date, staffAbsences)) return false
+                  // Check if staff works on this day
+                  return staff.staff_shifts?.some((shift) => shift.dayOfWeek === dayOfWeek)
+                })
+                return availableStaffForDay.length === 0
+              } else if (selectedStaff) {
+                // Check if selected staff is absent OR doesn't work on this day
+                if (isStaffAbsent(selectedStaff.id, date, staffAbsences)) return true
+                return !selectedStaff.staff_shifts?.some((shift) => shift.dayOfWeek === dayOfWeek)
+              } else {
+                const staffAvailableDays = staffShifts.map((s) => s.dayOfWeek)
+                return !staffAvailableDays.includes(dayOfWeek)
+              }
+            }}
+            className="mx-auto"
+          />
+        )}
       </div>
 
       {/* Time Slots */}
@@ -262,11 +272,18 @@ export default function DateSelector({
       )}
 
       {/* No Available Slots Message */}
-      {reservation.date && availableTimes.length === 0 && (
+      {reservation.date && availableTimes.length === 0 && !isLoadingAbsences && (
         <div className="p-6 text-center text-gray-500">
           No available time slots for the selected date.
           {isAnyArtist && availableStaff.length > 0 && (
-            <div className="mt-2 text-sm">All staff members are booked for this day.</div>
+            <div className="mt-2 text-sm">
+              All staff members are either booked or absent on this day.
+            </div>
+          )}
+          {selectedStaff && isStaffAbsent(selectedStaff.id, reservation.date, staffAbsences) && (
+            <div className="mt-2 text-sm text-amber-600">
+              {selectedStaff.name} is on leave on this day.
+            </div>
           )}
         </div>
       )}

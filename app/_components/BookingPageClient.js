@@ -170,6 +170,38 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
     }
   }, [selectedServices, services, staffData, selectedArtist])
 
+  // Add this custom hook near your other hooks
+  // const useStaffAbsences = () => {
+  //   const [staffAbsences, setStaffAbsences] = useState([])
+  //   const [isLoading, setIsLoading] = useState(true)
+  //   const [error, setError] = useState(null)
+
+  //   useEffect(() => {
+  //     const fetchStaffAbsences = async () => {
+  //       try {
+  //         setIsLoading(true)
+  //         const { data, error } = await supabase
+  //           .from('staff_absences')
+  //           .select('*')
+  //           .gte('absenceDate', format(new Date(), 'yyyy-MM-dd'))
+  //           .lte('absenceDate', format(addMonths(new Date(), 3), 'yyyy-MM-dd'))
+
+  //         if (error) throw error
+  //         setStaffAbsences(data || [])
+  //       } catch (err) {
+  //         console.error('Error loading staff absences:', err)
+  //         setError(err)
+  //         setStaffAbsences([])
+  //       } finally {
+  //         setIsLoading(false)
+  //       }
+  //     }
+  //     fetchStaffAbsences()
+  //   }, [])
+
+  //   return { staffAbsences, isLoading, error }
+  // }
+
   // Filter services based on search
   const getFilteredServices = () => {
     if (!searchTerm) return organizedServices
@@ -329,10 +361,6 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
       .slice(0, 2)
   }
 
-  const isStaffBusy = (staff) => {
-    return staff.bookings && staff.bookings.length > 20
-  }
-
   const getSelectedStaffData = () => {
     if (selectedArtist === 'any') {
       const allShifts = availableStaff.flatMap((staff) => staff.staff_shifts || [])
@@ -448,7 +476,7 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
 
             {/* Sticky Category Tabs - Only on Services step */}
             {currentStep === 1 && (
-              <div className="sticky top-16 sm:top-[62px] bg-white z-10 border-b">
+              <div className="sticky top-16 sm:top-[78px] bg-white z-10 border-b">
                 {/* Search Bar */}
                 <div className="px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4">
                   <div className="relative">
@@ -644,7 +672,6 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
                   </div>
 
                   {availableStaff.map((staff) => {
-                    const busy = isStaffBusy(staff)
                     const isSelected = selectedArtist === staff.name
                     return (
                       <div
@@ -653,8 +680,8 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
                           isSelected
                             ? 'border-2 border-blue-600 bg-blue-50'
                             : 'border-gray-200 hover:border-gray-300'
-                        } ${busy ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={() => !busy && handleArtistSelection(staff.name)}
+                        }`}
+                        onClick={() => handleArtistSelection(staff.name)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -722,11 +749,11 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
                       Nailaholics Nails & Beauty
                     </h3>
                     <div className="flex items-center gap-1 mb-1">
-                      <span className="text-sm font-semibold">4.9</span>
+                      <span className="text-sm font-semibold">5.0</span>
                       <span className="text-yellow-400">★★★★★</span>
-                      <span className="text-sm text-gray-500">(881)</span>
+                      <span className="text-sm text-gray-500">(868)</span>
                     </div>
-                    <p className="text-sm text-gray-600">Shop 3/12 Park Street, Peakhurst, NSW</p>
+                    <p className="text-sm text-gray-600">4B Pitt St, Mortdale NSW 2223</p>
                   </div>
                 </div>
               </div>
@@ -801,7 +828,11 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
                       <p className="text-center text-xs text-gray-600">
                         Do not have an account?{' '}
                         <Link
-                          href="/signup"
+                          href={`/register?redirect=/booking-summary&services=${selectedServices.join(
+                            ','
+                          )}&artist=${selectedArtist}&date=${reservation?.date?.toISOString()}&time=${
+                            reservation?.time
+                          }`}
                           className="text-blue-600 hover:text-blue-800 font-medium"
                         >
                           Create one here

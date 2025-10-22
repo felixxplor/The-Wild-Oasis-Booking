@@ -46,27 +46,6 @@ async function AppointmentsContent() {
   console.log('Session user:', session.user)
   console.log('Client ID:', session.user.clientId)
 
-  if (!session.user.clientId) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8 sm:py-12 px-3 sm:px-4 md:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8 text-center">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
-              Account Setup Required
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-              Your account needs to be properly set up before you can view appointments. Please
-              contact support or try logging in again.
-            </p>
-            <p className="text-xs sm:text-sm text-gray-500">
-              User ID: {session.user.id || 'Not found'}
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   let bookings = []
   let error = null
 
