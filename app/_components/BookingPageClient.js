@@ -476,7 +476,7 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
 
             {/* Sticky Category Tabs - Only on Services step */}
             {currentStep === 1 && (
-              <div className="sticky top-16 sm:top-[78px] bg-white z-10 border-b">
+              <div className="sticky top-16 sm:top-[62px] bg-white z-10 border-b">
                 {/* Search Bar */}
                 <div className="px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4">
                   <div className="relative">
