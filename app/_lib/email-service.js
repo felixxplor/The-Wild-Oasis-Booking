@@ -7,6 +7,44 @@ import {
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+// ============================================
+// HELPER FUNCTION - Format dates/times correctly
+// ============================================
+function formatDateTime(dateString, timeString) {
+  // Parse date string (YYYY-MM-DD) without timezone conversion
+  let formattedDate = 'Date TBD'
+  let formattedTime = 'Time TBD'
+
+  if (dateString) {
+    const [year, month, day] = dateString.split('-').map(Number)
+    const date = new Date(year, month - 1, day, 12, 0, 0)
+
+    formattedDate = date.toLocaleDateString('en-AU', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  }
+
+  if (timeString) {
+    // Extract time from "YYYY-MM-DD HH:MM:SS" format
+    const timeMatch = timeString.match(/(\d{2}):(\d{2}):(\d{2})/)
+
+    if (timeMatch) {
+      const [_, hours, minutes] = timeMatch
+      const hour = parseInt(hours, 10)
+      const minute = minutes
+      const ampm = hour >= 12 ? 'PM' : 'AM'
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+
+      formattedTime = `${displayHour}:${minute} ${ampm}`
+    }
+  }
+
+  return { date: formattedDate, time: formattedTime }
+}
+
 export async function sendBookingConfirmationEmail(data) {
   try {
     // console.log('📧 [EMAIL] Starting confirmation email')
@@ -144,24 +182,7 @@ export async function sendBookingUpdateNotificationEmail(data) {
     const totalPrice = booking.totalPrice
     const totalDuration = services.reduce((sum, service) => sum + (service.duration || 0), 0)
 
-    // Format date and time for display
-    const formatDateTime = (dateString, timeString) => {
-      const date = new Date(dateString || timeString)
-      return {
-        date: date.toLocaleDateString('en-AU', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
-        time: date.toLocaleTimeString('en-AU', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        }),
-      }
-    }
-
+    // FIXED: Use proper date/time formatting
     const { date: formattedDate, time: formattedTime } = formatDateTime(
       booking.date,
       booking.startTime
@@ -224,7 +245,7 @@ Updated Booking Details:
 - Total Price: $${totalPrice}
 ${booking.notes ? `- Notes: ${booking.notes}` : ''}${changesSummary}
 
-Please review and confirm this updated booking.
+Please review the updated booking details.
     `.trim()
 
     // HTML version
@@ -244,7 +265,7 @@ Please review and confirm this updated booking.
           
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #FF6B9D 0%, #C239B3 100%); padding: 30px 40px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); padding: 30px 40px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold;">🔔 Booking Updated</h1>
             </td>
           </tr>
@@ -258,14 +279,14 @@ Please review and confirm this updated booking.
               </p>
 
               <!-- Customer Details -->
-              <div style="background-color: #f8f9fa; border-left: 4px solid #FF6B9D; padding: 20px; margin-bottom: 20px;">
+              <div style="background-color: #f8f9fa; border-left: 4px solid #3B82F6; padding: 20px; margin-bottom: 20px;">
                 <h2 style="margin: 0 0 15px; color: #333333; font-size: 18px;">Customer Details</h2>
                 <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Name:</strong> ${clientName}</p>
-                <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Email:</strong> ${clientEmail}</p>
+                <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Email:</strong> <a href="mailto:${clientEmail}" style="color: #3B82F6; text-decoration: none;">${clientEmail}</a></p>
               </div>
 
-              <!-- Booking Details -->
-              <div style="background-color: #f8f9fa; border-left: 4px solid #C239B3; padding: 20px; margin-bottom: 20px;">
+              <!-- Updated Booking Details -->
+              <div style="background-color: #f8f9fa; border-left: 4px solid #1D4ED8; padding: 20px; margin-bottom: 20px;">
                 <h2 style="margin: 0 0 15px; color: #333333; font-size: 18px;">Updated Booking Details</h2>
                 <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Booking ID:</strong> ${
                   booking.id
@@ -278,13 +299,31 @@ Please review and confirm this updated booking.
                 <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Total Price:</strong> $${totalPrice}</p>
                 ${
                   booking.notes
-                    ? `<p style="margin: 15px 0 5px; color: #555555; font-size: 14px;"><strong>Notes:</strong></p><p style="margin: 5px 0; color: #555555; font-size: 14px; font-style: italic;">${booking.notes}</p>`
+                    ? `<p style="margin: 15px 0 5px; color: #555555; font-size: 14px;"><strong>Customer Notes:</strong></p><p style="margin: 5px 0; color: #555555; font-size: 14px; font-style: italic; background-color: #fffbea; padding: 10px; border-radius: 4px;">${booking.notes}</p>`
                     : ''
                 }
               </div>
 
+              ${
+                changesSummary
+                  ? `
+              <!-- Changes Summary -->
+              <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin-bottom: 20px;">
+                <h2 style="margin: 0 0 15px; color: #856404; font-size: 18px;">Changes Made</h2>
+                <div style="color: #856404; font-size: 14px; line-height: 1.8;">
+                  ${changesSummary
+                    .split('\n')
+                    .slice(2)
+                    .map((change) => `<p style="margin: 5px 0;">${change}</p>`)
+                    .join('')}
+                </div>
+              </div>
+              `
+                  : ''
+              }
+
               <p style="margin: 20px 0 0; color: #666666; font-size: 14px; line-height: 1.5;">
-                Please review and confirm this updated booking in your booking management system.
+                Please review the updated booking details in your system.
               </p>
 
             </td>
@@ -334,42 +373,16 @@ Please review and confirm this updated booking.
 export async function sendCancellationNotificationEmail(data) {
   try {
     // console.log('📧 [EMAIL SERVICE] Starting sendCancellationNotificationEmail')
-    const { businessEmail, clientEmail, clientName, booking, services, staff } = data
+    const { businessEmail, clientEmail, clientName, booking } = data
 
-    const totalPrice = booking.totalPrice || booking.price
-
-    // Format date and time for display
-    const formatDateTime = (dateString, timeString) => {
-      const date = new Date(dateString || timeString)
-      return {
-        date: date.toLocaleDateString('en-AU', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
-        time: date.toLocaleTimeString('en-AU', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        }),
-      }
-    }
-
+    // FIXED: Use proper date/time formatting
     const { date: formattedDate, time: formattedTime } = formatDateTime(
       booking.date,
       booking.startTime
     )
-    const serviceList =
-      services && services.length > 0 ? services.map((s) => s.name).join(', ') : 'N/A'
-    const staffName = staff ? staff.name : 'Any available staff'
-    const totalDuration =
-      services && services.length > 0
-        ? services.reduce((sum, service) => sum + (service.duration || 0), 0)
-        : 0
 
     // Email subject
-    const subject = `❌ Booking Cancelled - ${clientName}`
+    const subject = `🚫 Booking Cancelled - ${clientName}`
 
     // Plain text version
     const text = `
@@ -385,13 +398,10 @@ Cancelled Booking Details:
 - Booking ID: ${booking.id}
 - Date: ${formattedDate}
 - Time: ${formattedTime}
-- Services: ${serviceList}
-- Staff: ${staffName}
-- Duration: ${totalDuration} minutes
-- Total Price: $${totalPrice}
+- Total Price: $${booking.totalPrice}
 ${booking.notes ? `- Notes: ${booking.notes}` : ''}
 
-This time slot is now available for other bookings.
+This slot is now available for rebooking.
     `.trim()
 
     // HTML version
@@ -411,8 +421,8 @@ This time slot is now available for other bookings.
           
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 30px 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold;">❌ Booking Cancelled</h1>
+            <td style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); padding: 30px 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold;">🚫 Booking Cancelled</h1>
             </td>
           </tr>
 
@@ -425,41 +435,39 @@ This time slot is now available for other bookings.
               </p>
 
               <!-- Customer Details -->
-              <div style="background-color: #f8f9fa; border-left: 4px solid #dc3545; padding: 20px; margin-bottom: 20px;">
+              <div style="background-color: #f8f9fa; border-left: 4px solid #EF4444; padding: 20px; margin-bottom: 20px;">
                 <h2 style="margin: 0 0 15px; color: #333333; font-size: 18px;">Customer Details</h2>
                 <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Name:</strong> ${clientName}</p>
-                <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Email:</strong> ${clientEmail}</p>
+                <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Email:</strong> <a href="mailto:${clientEmail}" style="color: #EF4444; text-decoration: none;">${clientEmail}</a></p>
               </div>
 
               <!-- Cancelled Booking Details -->
-              <div style="background-color: #fff5f5; border-left: 4px solid #c82333; padding: 20px; margin-bottom: 20px;">
+              <div style="background-color: #fee; border-left: 4px solid #DC2626; padding: 20px; margin-bottom: 20px;">
                 <h2 style="margin: 0 0 15px; color: #333333; font-size: 18px;">Cancelled Booking Details</h2>
                 <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Booking ID:</strong> ${
                   booking.id
                 }</p>
                 <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Date:</strong> ${formattedDate}</p>
                 <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Time:</strong> ${formattedTime}</p>
-                <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Services:</strong> ${serviceList}</p>
-                <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Staff:</strong> ${staffName}</p>
-                <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Duration:</strong> ${totalDuration} minutes</p>
-                <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Total Price:</strong> $${totalPrice}</p>
+                <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Total Price:</strong> $${
+                  booking.totalPrice
+                }</p>
                 ${
                   booking.notes
-                    ? `<p style="margin: 15px 0 5px; color: #555555; font-size: 14px;"><strong>Notes:</strong></p><p style="margin: 5px 0; color: #555555; font-size: 14px; font-style: italic;">${booking.notes}</p>`
+                    ? `<p style="margin: 15px 0 5px; color: #555555; font-size: 14px;"><strong>Notes:</strong></p><p style="margin: 5px 0; color: #555555; font-size: 14px; font-style: italic; background-color: #fffbea; padding: 10px; border-radius: 4px;">${booking.notes}</p>`
                     : ''
                 }
               </div>
 
-              <!-- Action Required -->
-              <div style="background-color: #d1ecf1; border-left: 4px solid #17a2b8; padding: 20px; margin-bottom: 20px;">
-                <h2 style="margin: 0 0 10px; color: #0c5460; font-size: 16px;">📅 Time Slot Available</h2>
+              <!-- Info -->
+              <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 20px; margin-bottom: 20px;">
                 <p style="margin: 0; color: #0c5460; font-size: 14px;">
-                  This time slot is now available for other bookings.
+                  ℹ️ This time slot is now available for rebooking.
                 </p>
               </div>
 
               <p style="margin: 20px 0 0; color: #666666; font-size: 14px; line-height: 1.5;">
-                Please update your booking calendar accordingly.
+                The booking has been removed from your schedule.
               </p>
 
             </td>
@@ -514,24 +522,7 @@ export async function sendBookingNotificationEmail(data) {
     const totalPrice = booking.totalPrice || booking.price
     const totalDuration = services.reduce((sum, service) => sum + (service.duration || 0), 0)
 
-    // Format date and time for display
-    const formatDateTime = (dateString, timeString) => {
-      const date = new Date(dateString || timeString)
-      return {
-        date: date.toLocaleDateString('en-AU', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
-        time: date.toLocaleTimeString('en-AU', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        }),
-      }
-    }
-
+    // FIXED: Use proper date/time formatting
     const { date: formattedDate, time: formattedTime } = formatDateTime(
       booking.date,
       booking.startTime

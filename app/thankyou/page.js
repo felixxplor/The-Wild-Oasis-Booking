@@ -81,9 +81,17 @@ async function ThankYouContent({ searchParams }) {
     redirect('/appointments')
   }
 
-  // Format date and time
+  // FIXED: Format date without timezone conversion
   const formatDate = (dateString) => {
-    const date = new Date(dateString)
+    if (!dateString) return 'Date TBD'
+
+    // Parse the date string manually to avoid timezone issues
+    // dateString is in format: YYYY-MM-DD
+    const [year, month, day] = dateString.split('-').map(Number)
+
+    // Create date at noon local time to avoid timezone shifts
+    const date = new Date(year, month - 1, day, 12, 0, 0)
+
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -92,18 +100,58 @@ async function ThankYouContent({ searchParams }) {
     })
   }
 
+  // FIXED: Format time from timestamp without timezone
   const formatTime = (timestamp) => {
     if (!timestamp) return 'Time TBD'
+
+    // timestamp format: "YYYY-MM-DD HH:MM:SS"
+    // Extract just the time portion
+    const timeMatch = timestamp.match(/(\d{2}):(\d{2}):(\d{2})/)
+
+    if (timeMatch) {
+      const [_, hours, minutes] = timeMatch
+      const hour = parseInt(hours, 10)
+      const minute = minutes
+      const ampm = hour >= 12 ? 'PM' : 'AM'
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+
+      return `${displayHour}:${minute} ${ampm}`
+    }
+
+    // Fallback: if timestamp is a full ISO string, parse it carefully
+    // Create a Date object but extract local components
     const date = new Date(timestamp)
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    })
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      })
+    }
+
+    return 'Time TBD'
   }
 
   const calculateDuration = () => {
     if (!booking.startTime || !booking.endTime) return 'Duration TBD'
+
+    // Extract time from timestamps
+    const startMatch = booking.startTime.match(/(\d{2}):(\d{2}):(\d{2})/)
+    const endMatch = booking.endTime.match(/(\d{2}):(\d{2}):(\d{2})/)
+
+    if (startMatch && endMatch) {
+      const [_, startHours, startMinutes] = startMatch
+      const [__, endHours, endMinutes] = endMatch
+
+      const startTotalMinutes = parseInt(startHours, 10) * 60 + parseInt(startMinutes, 10)
+      const endTotalMinutes = parseInt(endHours, 10) * 60 + parseInt(endMinutes, 10)
+
+      const durationMinutes = endTotalMinutes - startTotalMinutes
+
+      return `${durationMinutes} minutes`
+    }
+
+    // Fallback calculation
     const start = new Date(booking.startTime)
     const end = new Date(booking.endTime)
     const minutes = Math.round((end - start) / 60000)

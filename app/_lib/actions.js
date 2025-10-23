@@ -88,19 +88,23 @@ export async function createAppointment(bookingData, formData) {
     // Map artistId to staffId for consistency with database
     const staffId = bookingData.artistId || bookingData.staffId
 
-    // Helper function to create timestamp without timezone for PostgreSQL
+    // FIXED: Helper function to create timestamp without timezone for PostgreSQL
     const createTimestampWithoutTZ = (date, time, duration = 0) => {
       const [hours, minutes] = time.split(':').map(Number)
 
-      // Convert Date object to date string if needed
+      // CRITICAL FIX: Properly extract date components to prevent timezone shifts
       let dateString
       if (date instanceof Date) {
+        // Extract local date components (no timezone conversion)
         const year = date.getFullYear()
         const month = String(date.getMonth() + 1).padStart(2, '0')
         const day = String(date.getDate()).padStart(2, '0')
         dateString = `${year}-${month}-${day}`
+      } else if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        // Already in YYYY-MM-DD format
+        dateString = date
       } else {
-        dateString = date // Already a string in YYYY-MM-DD format
+        throw new Error(`Invalid date format: ${date}`)
       }
 
       // Calculate start time
@@ -113,6 +117,7 @@ export async function createAppointment(bookingData, formData) {
       const endMinutes = String(totalEndMinutes % 60).padStart(2, '0')
 
       // Create PostgreSQL timestamp without timezone strings
+      // Format: 'YYYY-MM-DD HH:MM:SS' (space separator, not 'T')
       const startTime = `${dateString} ${startHours}:${startMinutes}:00`
       const endTime = `${dateString} ${endHours}:${endMinutes}:00`
 
@@ -136,7 +141,7 @@ export async function createAppointment(bookingData, formData) {
 
     // Create the booking object matching your database schema
     const newBooking = {
-      date: dateString,
+      date: dateString, // PostgreSQL date type: 'YYYY-MM-DD'
       numClients: 1,
       price: bookingData.totalPrice,
       extrasPrice: 0,
@@ -148,8 +153,8 @@ export async function createAppointment(bookingData, formData) {
       serviceIds: bookingData.serviceIds,
       clientId: session.user.clientId,
       staffId: staffId,
-      startTime: startTime,
-      endTime: endTime,
+      startTime: startTime, // 'YYYY-MM-DD HH:MM:SS'
+      endTime: endTime, // 'YYYY-MM-DD HH:MM:SS'
     }
 
     // console.log('Creating booking with data:', newBooking)

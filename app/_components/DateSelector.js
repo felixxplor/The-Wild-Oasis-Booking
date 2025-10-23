@@ -29,6 +29,7 @@ function generateTimeSlots(startTime, endTime, durationMinutes = 30, serviceDura
 function hasBookingConflict(bookings, targetDate, targetTime, serviceDuration) {
   if (!bookings || bookings.length === 0) return false
 
+  // Use local date string format
   const year = targetDate.getFullYear()
   const month = String(targetDate.getMonth() + 1).padStart(2, '0')
   const day = String(targetDate.getDate()).padStart(2, '0')
@@ -50,6 +51,7 @@ function hasBookingConflict(bookings, targetDate, targetTime, serviceDuration) {
       return false
     }
 
+    // Compare using local date components
     const bookingDateStr = `${startDateTime.getFullYear()}-${String(
       startDateTime.getMonth() + 1
     ).padStart(2, '0')}-${String(startDateTime.getDate()).padStart(2, '0')}`
@@ -76,11 +78,15 @@ function hasBookingConflict(bookings, targetDate, targetTime, serviceDuration) {
   })
 }
 
-// NEW: Check if staff is absent on a specific date
+// Check if staff is absent on a specific date
 function isStaffAbsent(staffId, date, staffAbsences) {
   if (!staffAbsences || staffAbsences.length === 0) return false
 
-  const dateStr = format(date, 'yyyy-MM-dd')
+  // Format date in local timezone
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const dateStr = `${year}-${month}-${day}`
 
   return staffAbsences.some((absence) => {
     return absence.staffId === staffId && absence.absenceDate === dateStr
@@ -124,7 +130,6 @@ export default function DateSelector({
       if (result.success) {
         setStaffAbsences(result.data)
       } else {
-        // console.error('Error:', result.error)
         setStaffAbsences([])
       }
       setIsLoadingAbsences(false)
@@ -136,7 +141,19 @@ export default function DateSelector({
   const maxDate = addMonths(today, 3)
 
   const handleDateSelect = (date) => {
-    setReservation({ ...reservation, date, time: undefined })
+    // CRITICAL FIX: Normalize the date to avoid timezone issues
+    // Create a new date at noon local time to prevent shifting
+    const normalizedDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      12,
+      0,
+      0,
+      0
+    )
+
+    setReservation({ ...reservation, date: normalizedDate, time: undefined })
 
     if (!date) {
       setAvailableTimes([])
@@ -152,7 +169,6 @@ export default function DateSelector({
       availableStaff.forEach((staff) => {
         // Check if staff is absent on this date
         if (isStaffAbsent(staff.id, date, staffAbsences)) {
-          // console.log(`Staff ${staff.name} is absent on ${format(date, 'yyyy-MM-dd')}`)
           return // Skip this staff member
         }
 
@@ -173,9 +189,6 @@ export default function DateSelector({
     } else if (selectedStaff) {
       // Check if the selected staff is absent on this date
       if (isStaffAbsent(selectedStaff.id, date, staffAbsences)) {
-        // console.log(
-        //   `Selected staff ${selectedStaff.name} is absent on ${format(date, 'yyyy-MM-dd')}`
-        // )
         setAvailableTimes([])
         return
       }
