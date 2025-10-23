@@ -139,6 +139,11 @@ export default function LoginPage() {
           disabled={isLoading}
           className="border-b border-[#9d9d9c] bg-transparent w-full h-[45px] mb-4 px-2 focus:outline-none disabled:opacity-50"
         />
+        <div className="w-full max-w-md text-right mb-4">
+          <a href="/forgot-password" className="text-sm text-[#414141] underline hover:text-black">
+            Forgot Password?
+          </a>
+        </div>
 
         <button
           type="submit"
