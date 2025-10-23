@@ -609,11 +609,6 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
                                     <p className="text-sm text-gray-600 mb-3">
                                       {service.duration} mins
                                     </p>
-                                    {service.description && (
-                                      <p className="text-sm text-gray-500 mb-3">
-                                        {service.description}
-                                      </p>
-                                    )}
                                     <p className="text-base font-semibold text-gray-900">
                                       ${service.regularPrice}
                                     </p>
@@ -772,9 +767,7 @@ function BookingPage({ services = [], settings, bookedDates, staffData = [], ses
                             ${service.regularPrice}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600">
-                          {service.duration} mins with any professional
-                        </p>
+                        <p className="text-sm text-gray-600">{service.duration} mins</p>
                       </div>
                     ))}
                   </div>
