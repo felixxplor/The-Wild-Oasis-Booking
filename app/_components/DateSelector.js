@@ -87,6 +87,17 @@ function isStaffAbsent(staffId, date, staffAbsences) {
   })
 }
 
+function filterSlotsForStaff(slots, staffId) {
+  if (staffId === 1) {
+    // Only show slots from 12:00 onwards for staff with ID 1
+    return slots.filter((slot) => {
+      const [hour] = slot.split(':').map(Number)
+      return hour >= 12
+    })
+  }
+  return slots
+}
+
 export default function DateSelector({
   staffShifts = [],
   bookedSlots = [],
@@ -188,6 +199,7 @@ export default function DateSelector({
       })
 
       availableSlots = [...new Set(availableSlots)].sort()
+      availableSlots = filterSlotsForStaff(availableSlots, selectedStaff.id)
     } else {
       const shift = staffShifts.find((s) => s.dayOfWeek === dayOfWeek)
       if (!shift) {
