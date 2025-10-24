@@ -92,8 +92,8 @@ function BookingSummary({
 
     return {
       serviceIds: selectedServices,
-      artistId: selectedStaffInfo.id,
-      artistName: selectedArtist === 'any' ? null : selectedArtist,
+      // Only send artistId if a specific artist was selected
+      artistId: selectedArtist === 'any' ? null : selectedStaffInfo.id,
       date: reservation.date,
       time: reservation.time,
       totalPrice,

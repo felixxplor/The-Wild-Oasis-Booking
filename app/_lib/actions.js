@@ -86,7 +86,7 @@ export async function createAppointment(bookingData, formData) {
     const notes = formData?.get('notes') || bookingData.notes || ''
 
     // Map artistId to staffId for consistency with database
-    const staffId = bookingData.artistId || bookingData.staffId
+    let staffId = bookingData.artistId || bookingData.staffId
 
     // FIXED: Helper function to create timestamp without timezone for PostgreSQL
     const createTimestampWithoutTZ = (date, time, duration = 0) => {
@@ -130,18 +130,144 @@ export async function createAppointment(bookingData, formData) {
       bookingData.totalDuration
     )
 
-    // console.log('Creating timestamps:', {
-    //   originalDate: bookingData.date,
-    //   originalTime: bookingData.time,
-    //   duration: bookingData.totalDuration,
-    //   dateString: dateString,
-    //   calculatedStartTime: startTime,
-    //   calculatedEndTime: endTime,
-    // })
+    // Get day of week (0 = Sunday, 1 = Monday, etc.)
+    const bookingDate = new Date(bookingData.date)
+    const dayOfWeek = bookingDate.getDay()
+
+    // AUTO-ASSIGN STAFF: If no specific staff was selected, find an available one
+    if (!staffId) {
+      // Get all staff members with their shifts and services
+      const { data: allStaff, error: staffError } = await supabase
+        .from('staff')
+        .select(
+          `
+          id,
+          name,
+          staff_shifts (dayOfWeek, startTime, endTime),
+          staff_services (serviceId)
+        `
+        )
+        .order('id', { ascending: false })
+
+      if (staffError) {
+        throw new Error('Error fetching staff members: ' + staffError.message)
+      }
+
+      if (!allStaff || allStaff.length === 0) {
+        throw new Error('No staff members available')
+      }
+
+      // Get staff absences for the selected date
+      const { data: absences } = await supabase
+        .from('staff_absences')
+        .select('staffId')
+        .eq('absenceDate', dateString)
+
+      const absentStaffIds = absences ? absences.map((a) => a.staffId) : []
+
+      // Check each staff member for availability
+      let availableStaff = null
+
+      for (const staff of allStaff) {
+        // 1. Check if staff is absent on this date
+        if (absentStaffIds.includes(staff.id)) {
+          continue
+        }
+
+        // 2. Check if staff works on this day of the week
+        const shiftsForDay =
+          staff.staff_shifts?.filter((shift) => shift.dayOfWeek === dayOfWeek) || []
+        if (shiftsForDay.length === 0) {
+          continue
+        }
+
+        // 3. Check if the booking time falls within any of the staff's shifts
+        const [bookingHour, bookingMinute] = bookingData.time.split(':').map(Number)
+        const bookingTimeMinutes = bookingHour * 60 + bookingMinute
+        const bookingEndMinutes = bookingTimeMinutes + bookingData.totalDuration
+
+        let isWithinShift = false
+        for (const shift of shiftsForDay) {
+          const [shiftStartHour, shiftStartMinute] = shift.startTime.split(':').map(Number)
+          const shiftStartMinutes = shiftStartHour * 60 + shiftStartMinute
+
+          const [shiftEndHour, shiftEndMinute] = shift.endTime.split(':').map(Number)
+          const shiftEndMinutes = shiftEndHour * 60 + shiftEndMinute
+
+          // Check if booking time is within shift hours
+          if (bookingTimeMinutes >= shiftStartMinutes && bookingEndMinutes <= shiftEndMinutes) {
+            isWithinShift = true
+            break
+          }
+        }
+
+        if (!isWithinShift) {
+          continue
+        }
+
+        // 4. Special rule for staff ID 1: only allow bookings from 12:00 onwards
+        if (staff.id === 1 && bookingHour < 12) {
+          continue
+        }
+
+        // 5. Check if staff can perform all selected services
+        const staffServiceIds = staff.staff_services?.map((ss) => ss.serviceId) || []
+        const canPerformAllServices = bookingData.serviceIds.every((serviceId) =>
+          staffServiceIds.includes(serviceId)
+        )
+
+        if (!canPerformAllServices) {
+          continue
+        }
+
+        // 6. Check for booking conflicts
+        const { data: existingBookings, error: conflictError } = await supabase
+          .from('bookings')
+          .select('id, startTime, endTime, status')
+          .eq('staffId', staff.id)
+          .eq('date', dateString)
+          .in('status', ['pending', 'confirmed'])
+
+        if (conflictError) {
+          continue
+        }
+
+        // Check if there's any time overlap
+        let hasConflict = false
+
+        if (existingBookings && existingBookings.length > 0) {
+          for (const booking of existingBookings) {
+            const existingStart = booking.startTime
+            const existingEnd = booking.endTime
+
+            // Check for overlap: new booking overlaps if it starts before existing ends AND ends after existing starts
+            if (startTime < existingEnd && endTime > existingStart) {
+              hasConflict = true
+              break
+            }
+          }
+        }
+
+        // 7. If all checks pass, this staff member is available!
+        if (!hasConflict) {
+          availableStaff = staff
+          break
+        }
+      }
+
+      if (!availableStaff) {
+        throw new Error(
+          'No staff available at the selected date and time. Please choose a different time slot.'
+        )
+      }
+
+      // Assign the available staff member
+      staffId = availableStaff.id
+    }
 
     // Create the booking object matching your database schema
     const newBooking = {
-      date: dateString, // PostgreSQL date type: 'YYYY-MM-DD'
+      date: dateString,
       numClients: 1,
       price: bookingData.totalPrice,
       extrasPrice: 0,
@@ -153,11 +279,9 @@ export async function createAppointment(bookingData, formData) {
       serviceIds: bookingData.serviceIds,
       clientId: session.user.clientId,
       staffId: staffId,
-      startTime: startTime, // 'YYYY-MM-DD HH:MM:SS'
-      endTime: endTime, // 'YYYY-MM-DD HH:MM:SS'
+      startTime: startTime,
+      endTime: endTime,
     }
-
-    // console.log('Creating booking with data:', newBooking)
 
     // Create a single booking with all services
     const createdBooking = await createBooking(newBooking)
@@ -167,50 +291,23 @@ export async function createAppointment(bookingData, formData) {
       throw new Error('Booking was created but no booking object was returned')
     }
 
-    // console.log('Booking created successfully:', createdBooking)
-
     // Fetch services for email
-    // console.log('📧 Fetching services for email, IDs:', bookingData.serviceIds)
-
-    const { data: servicesData, error: servicesError } = await supabase
+    const { data: servicesData } = await supabase
       .from('services')
       .select('*')
       .in('id', bookingData.serviceIds)
 
-    if (servicesError) {
-      // console.error('❌ Error fetching services for email:', servicesError)
-    } else {
-      // console.log('✅ Services fetched for email:', servicesData)
-    }
-
     // Fetch staff for email
     let staffData = null
     if (staffId) {
-      const { data: staff, error: staffError } = await supabase
-        .from('staff')
-        .select('*')
-        .eq('id', staffId)
-        .single()
+      const { data: staff } = await supabase.from('staff').select('*').eq('id', staffId).single()
 
-      if (staffError) {
-        // console.error('❌ Error fetching staff for email:', staffError)
-      } else {
+      if (staff) {
         staffData = staff
-        // console.log('✅ Staff fetched for email:', staffData?.name)
       }
     }
 
     // Send confirmation email to customer
-    // console.log('📧 Attempting to send confirmation email to customer...')
-    // console.log('📧 Email data prepared:', {
-    //   hasBooking: !!createdBooking,
-    //   hasServices: !!servicesData && servicesData.length > 0,
-    //   hasClientEmail: !!session.user.email,
-    //   hasClientName: !!session.user.name,
-    //   clientEmail: session.user.email,
-    //   clientName: session.user.name,
-    // })
-
     try {
       await sendBookingConfirmationEmail({
         booking: createdBooking,
@@ -219,14 +316,11 @@ export async function createAppointment(bookingData, formData) {
         services: servicesData || [],
         staff: staffData,
       })
-      // console.log('✅ Customer confirmation email sent successfully')
     } catch (emailError) {
-      // console.error('❌ Failed to send customer confirmation email:', emailError)
-      // console.error('❌ Email error details:', emailError.message)
+      // Email error handled silently
     }
 
     // Send notification email to business
-    // console.log('📧 Attempting to send notification email to business...')
     try {
       await sendBookingNotificationEmail({
         booking: createdBooking,
@@ -236,10 +330,8 @@ export async function createAppointment(bookingData, formData) {
         services: servicesData || [],
         staff: staffData,
       })
-      // console.log('✅ Business notification email sent successfully')
     } catch (emailError) {
-      // console.error('❌ Failed to send business notification email:', emailError)
-      // console.error('❌ Email error details:', emailError.message)
+      // Email error handled silently
     }
 
     // Revalidate relevant paths
@@ -252,8 +344,6 @@ export async function createAppointment(bookingData, formData) {
       bookingId: createdBooking.id,
     }
   } catch (error) {
-    // console.error('Error creating appointment:', error)
-
     // Return error instead of throwing
     return {
       success: false,
@@ -367,6 +457,9 @@ export async function updateBooking(updateData) {
       throw new Error('Cannot update cancelled bookings')
     }
 
+    // Map artistId to staffId for consistency
+    let assignedStaffId = staffId
+
     // Create timestamp helper
     const createTimestampWithoutTZ = (date, time, duration = 0) => {
       const [hours, minutes] = time.split(':').map(Number)
@@ -396,11 +489,141 @@ export async function updateBooking(updateData) {
 
     const { dateString, startTime, endTime } = createTimestampWithoutTZ(date, time, totalDuration)
 
-    // console.log('Updating booking with timestamps:', {
-    //   dateString,
-    //   startTime,
-    //   endTime,
-    // })
+    // Get day of week (0 = Sunday, 1 = Monday, etc.)
+    const bookingDate2 = new Date(date)
+    const dayOfWeek = bookingDate2.getDay()
+
+    // AUTO-ASSIGN STAFF: If no specific staff was selected, find an available one
+    if (!assignedStaffId) {
+      // Get all staff members with their shifts and services
+      const { data: allStaff, error: staffError } = await supabase
+        .from('staff')
+        .select(
+          `
+          id,
+          name,
+          staff_shifts (dayOfWeek, startTime, endTime),
+          staff_services (serviceId)
+        `
+        )
+        .order('id', { ascending: false })
+
+      if (staffError) {
+        throw new Error('Error fetching staff members: ' + staffError.message)
+      }
+
+      if (!allStaff || allStaff.length === 0) {
+        throw new Error('No staff members available')
+      }
+
+      // Get staff absences for the selected date
+      const { data: absences } = await supabase
+        .from('staff_absences')
+        .select('staffId')
+        .eq('absenceDate', dateString)
+
+      const absentStaffIds = absences ? absences.map((a) => a.staffId) : []
+
+      // Check each staff member for availability
+      let availableStaff = null
+
+      for (const staff of allStaff) {
+        // 1. Check if staff is absent on this date
+        if (absentStaffIds.includes(staff.id)) {
+          continue
+        }
+
+        // 2. Check if staff works on this day of the week
+        const shiftsForDay =
+          staff.staff_shifts?.filter((shift) => shift.dayOfWeek === dayOfWeek) || []
+        if (shiftsForDay.length === 0) {
+          continue
+        }
+
+        // 3. Check if the booking time falls within any of the staff's shifts
+        const [bookingHour, bookingMinute] = time.split(':').map(Number)
+        const bookingTimeMinutes = bookingHour * 60 + bookingMinute
+        const bookingEndMinutes = bookingTimeMinutes + totalDuration
+
+        let isWithinShift = false
+        for (const shift of shiftsForDay) {
+          const [shiftStartHour, shiftStartMinute] = shift.startTime.split(':').map(Number)
+          const shiftStartMinutes = shiftStartHour * 60 + shiftStartMinute
+
+          const [shiftEndHour, shiftEndMinute] = shift.endTime.split(':').map(Number)
+          const shiftEndMinutes = shiftEndHour * 60 + shiftEndMinute
+
+          // Check if booking time is within shift hours
+          if (bookingTimeMinutes >= shiftStartMinutes && bookingEndMinutes <= shiftEndMinutes) {
+            isWithinShift = true
+            break
+          }
+        }
+
+        if (!isWithinShift) {
+          continue
+        }
+
+        // 4. Special rule for staff ID 1: only allow bookings from 12:00 onwards
+        if (staff.id === 1 && bookingHour < 12) {
+          continue
+        }
+
+        // 5. Check if staff can perform all selected services
+        const staffServiceIds = staff.staff_services?.map((ss) => ss.serviceId) || []
+        const canPerformAllServices = serviceIds.every((serviceId) =>
+          staffServiceIds.includes(serviceId)
+        )
+
+        if (!canPerformAllServices) {
+          continue
+        }
+
+        // 6. Check for booking conflicts (excluding the current booking being updated)
+        const { data: existingBookings, error: conflictError } = await supabase
+          .from('bookings')
+          .select('id, startTime, endTime, status')
+          .eq('staffId', staff.id)
+          .eq('date', dateString)
+          .neq('id', bookingId) // Exclude the current booking being updated
+          .in('status', ['pending', 'confirmed'])
+
+        if (conflictError) {
+          continue
+        }
+
+        // Check if there's any time overlap
+        let hasConflict = false
+
+        if (existingBookings && existingBookings.length > 0) {
+          for (const booking of existingBookings) {
+            const existingStart = booking.startTime
+            const existingEnd = booking.endTime
+
+            // Check for overlap
+            if (startTime < existingEnd && endTime > existingStart) {
+              hasConflict = true
+              break
+            }
+          }
+        }
+
+        // 7. If all checks pass, this staff member is available!
+        if (!hasConflict) {
+          availableStaff = staff
+          break
+        }
+      }
+
+      if (!availableStaff) {
+        throw new Error(
+          'No staff available at the selected date and time. Please choose a different time slot.'
+        )
+      }
+
+      // Assign the available staff member
+      assignedStaffId = availableStaff.id
+    }
 
     // Update booking
     const { data, error } = await supabase
@@ -409,7 +632,7 @@ export async function updateBooking(updateData) {
         date: dateString,
         serviceId: serviceIds[0],
         serviceIds: serviceIds,
-        staffId: staffId || null,
+        staffId: assignedStaffId,
         startTime: startTime,
         endTime: endTime,
         price: totalPrice,
@@ -422,23 +645,19 @@ export async function updateBooking(updateData) {
       .single()
 
     if (error) {
-      // console.error('Error updating booking:', error)
       throw new Error(`Failed to update booking: ${error.message}`)
     }
 
     // Fetch services for email
-    const { data: services } = await supabase
-      .from('services')
-      .select('*')
-      .in('id', updateData.serviceIds)
+    const { data: services } = await supabase.from('services').select('*').in('id', serviceIds)
 
     // Fetch staff for email
     let staff = null
-    if (updateData.staffId) {
+    if (assignedStaffId) {
       const { data: staffData } = await supabase
         .from('staff')
         .select('*')
-        .eq('id', updateData.staffId)
+        .eq('id', assignedStaffId)
         .single()
       staff = staffData
     }
@@ -452,10 +671,8 @@ export async function updateBooking(updateData) {
         services: services || [],
         staff: staff,
       })
-      // console.log('✅ Customer update email sent successfully')
     } catch (emailError) {
-      // console.error('Failed to send customer update email:', emailError)
-      // Don't throw - update was successful
+      // Email error handled silently
     }
 
     // Send update notification to business
@@ -467,22 +684,17 @@ export async function updateBooking(updateData) {
         clientName: session.user.name,
         services: services || [],
         staff: staff,
-        previousBooking: existingBooking, // Optional: to show what changed
+        previousBooking: existingBooking,
       })
-      // console.log('✅ Business update notification sent successfully')
     } catch (emailError) {
-      // console.error('Failed to send business update notification:', emailError)
-      // Don't throw - update was successful
+      // Email error handled silently
     }
-
-    // console.log('Booking updated successfully:', data)
 
     // Revalidate paths
     revalidatePath('/appointments')
 
     return { success: true }
   } catch (error) {
-    // console.error('Error in updateBooking:', error)
     return {
       success: false,
       error: error.message || 'Failed to update booking',

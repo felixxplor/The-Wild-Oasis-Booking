@@ -232,10 +232,6 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
       .slice(0, 2)
   }
 
-  const isStaffBusy = (staff) => {
-    return staff.bookings && staff.bookings.length > 20
-  }
-
   const getSelectedStaffData = () => {
     if (selectedArtist === 'any') {
       const allShifts = availableStaff.flatMap((staff) => staff.staff_shifts || [])
@@ -604,14 +600,16 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
 
                       {/* Individual Artists */}
                       {availableStaff.map((staff) => {
-                        const busy = isStaffBusy(staff)
+                        const isSelected = selectedArtist === staff.name
                         return (
                           <div
                             key={staff.id}
-                            className={`border rounded-lg p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-sm ${
-                              busy ? 'opacity-50 cursor-not-allowed' : ''
+                            className={`border rounded-xl p-6 cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'border-2 border-blue-600 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300'
                             }`}
-                            onClick={() => !busy && handleArtistSelection(staff.name)}
+                            onClick={() => handleArtistSelection(staff.name)}
                           >
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -636,11 +634,6 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
                                     <span className="text-xs sm:text-sm text-gray-500 flex-shrink-0">
                                       {totalDuration}min
                                     </span>
-                                    {busy && (
-                                      <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded flex-shrink-0">
-                                        Busy
-                                      </span>
-                                    )}
                                   </div>
                                   {staff.bio && (
                                     <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">
@@ -654,9 +647,8 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
                                 name="artist"
                                 value={staff.name}
                                 checked={selectedArtist === staff.name}
-                                onChange={() => !busy && handleArtistSelection(staff.name)}
+                                onChange={() => handleArtistSelection(staff.name)}
                                 className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 pointer-events-none flex-shrink-0"
-                                disabled={busy}
                               />
                             </div>
                           </div>
