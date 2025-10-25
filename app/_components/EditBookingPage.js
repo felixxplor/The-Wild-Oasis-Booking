@@ -174,13 +174,14 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
     let hasPlus = false
 
     selectedServiceObjects.forEach((service) => {
+      // Check if the ORIGINAL regularPrice has a + sign
+      if (String(service.regularPrice).includes('+')) {
+        hasPlus = true
+      }
+
       const priceStr = String(
         service.discount ? service.regularPrice - service.discount : service.regularPrice
       )
-
-      if (priceStr.includes('+')) {
-        hasPlus = true
-      }
 
       const numericPrice = parseFloat(priceStr.replace('+', ''))
       totalPriceNum += numericPrice
@@ -295,7 +296,7 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
         staffId: selectedArtist === 'any' ? null : selectedStaffObj?.id || null,
         date: reservation.date,
         time: reservation.time,
-        totalPrice: parseFloat(String(totalPrice).replace('+', '')),
+        totalPrice: String(totalPrice),
         totalDuration,
         notes: notes.trim(),
       }

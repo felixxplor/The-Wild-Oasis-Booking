@@ -625,7 +625,7 @@ export async function updateBooking(updateData) {
       assignedStaffId = availableStaff.id
     }
 
-    // Update booking
+    // Update booking - Keep totalPrice as string to preserve the + sign
     const { data, error } = await supabase
       .from('bookings')
       .update({
@@ -635,8 +635,8 @@ export async function updateBooking(updateData) {
         staffId: assignedStaffId,
         startTime: startTime,
         endTime: endTime,
-        price: totalPrice,
-        totalPrice: totalPrice,
+        price: totalPrice, // Keep as string to preserve + sign
+        totalPrice: totalPrice, // Keep as string to preserve + sign
         notes: notes,
         status: 'pending',
       })
