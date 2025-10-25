@@ -93,6 +93,7 @@ function isStaffAbsent(staffId, date, staffAbsences) {
   })
 }
 
+// Apply special rules for specific staff members
 function filterSlotsForStaff(slots, staffId) {
   if (staffId === 1) {
     // Only show slots from 12:00 onwards for staff with ID 1
@@ -175,7 +176,10 @@ export default function DateSelector({
         const staffShiftsForDay = staff.staff_shifts?.filter((s) => s.dayOfWeek === dayOfWeek) || []
 
         staffShiftsForDay.forEach((shift) => {
-          const slots = generateTimeSlots(shift.startTime, shift.endTime, 30, serviceDuration)
+          let slots = generateTimeSlots(shift.startTime, shift.endTime, 30, serviceDuration)
+
+          // Apply special rules for this staff member
+          slots = filterSlotsForStaff(slots, staff.id)
 
           slots.forEach((slot) => {
             if (!hasBookingConflict(staff.bookings, date, slot, serviceDuration)) {
@@ -212,6 +216,8 @@ export default function DateSelector({
       })
 
       availableSlots = [...new Set(availableSlots)].sort()
+
+      // Apply special rules for the selected staff member
       availableSlots = filterSlotsForStaff(availableSlots, selectedStaff.id)
     } else {
       const shift = staffShifts.find((s) => s.dayOfWeek === dayOfWeek)
