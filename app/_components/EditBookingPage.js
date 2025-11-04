@@ -24,9 +24,7 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
   const [selectedServices, setSelectedServices] = useState(
     Array.isArray(booking.serviceIds) ? booking.serviceIds : []
   )
-  const [selectedArtist, setSelectedArtist] = useState(
-    booking.staffId ? booking.staff?.name || booking.staffId.toString() : null
-  )
+  const [selectedArtist, setSelectedArtist] = useState(null)
   const [activeTab, setActiveTab] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [availableStaff, setAvailableStaff] = useState([])
@@ -37,8 +35,8 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
 
   // Reservation state for date/time
   const [reservation, setReservation] = useState({
-    date: booking.date ? new Date(booking.date) : null,
-    time: booking.startTime ? new Date(booking.startTime).toTimeString().slice(0, 5) : null,
+    date: null,
+    time: null,
   })
 
   // Auto-scroll to date selection when artist is selected
@@ -85,6 +83,16 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
       }
     }
   }, [selectedServices, services, staffData, selectedArtist])
+
+  useEffect(() => {
+    // Reset date and time when artist changes
+    if (selectedArtist) {
+      setReservation({
+        date: null,
+        time: null,
+      })
+    }
+  }, [selectedArtist])
 
   // Organize services by category
   const organizedServices = services.reduce((acc, service) => {
@@ -401,6 +409,17 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
                     <span className="font-medium">Original Date:</span>{' '}
                     {new Date(booking.date).toLocaleDateString()}
                   </p>
+                  <p>
+                    <span className="font-medium">Original Time:</span>{' '}
+                    {new Date(booking.startTime).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                  <p>
+                    <span className="font-medium">Original Artist:</span>{' '}
+                    {booking.staff?.name || 'Any Artist'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -664,6 +683,7 @@ function EditBookingPage({ booking, services = [], staffData = [], session }) {
               {selectedServices.length > 0 && selectedArtist && (
                 <div ref={dateSelectionRef} className="mt-6 sm:mt-8 pt-6 border-t">
                   <DateSelector
+                    key={selectedArtist} // Add this line to force re-render when artist changes
                     staffShifts={getSelectedStaffData().staff_shifts}
                     bookedSlots={getSelectedStaffData().bookings}
                     serviceDuration={totalDuration}

@@ -97,7 +97,19 @@ export async function getClient(email) {
 }
 
 export async function getBooking(id) {
-  const { data, error, count } = await supabase.from('bookings').select('*').eq('id', id).single()
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(
+      `
+      *,
+      staff:staffId (
+        id,
+        name
+      )
+    `
+    )
+    .eq('id', id)
+    .single()
 
   if (error) {
     // console.error(error)
